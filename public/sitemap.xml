@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Bosh sahifa -->
+  <url>
+    <loc>https://as-salaam-clinic.uz/</loc>
+    <lastmod>2025-05-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Xizmatlar -->
+  <url>
+    <loc>https://as-salaam-clinic.uz/services</loc>
+    <lastmod>2025-05-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Shifokorlar -->
+  <url>
+    <loc>https://as-salaam-clinic.uz/doctors</loc>
+    <lastmod>2025-05-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Biz haqimizda -->
+  <url>
+    <loc>https://as-salaam-clinic.uz/about</loc>
+    <lastmod>2025-05-25</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Qabulga yozilish -->
+  <url>
+    <loc>https://as-salaam-clinic.uz/booking</loc>
+    <lastmod>2025-05-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>
