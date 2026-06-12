@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { Helmet } from 'react-helmet-async';
 import ServiceCard from '../components/ServiceCard';
 
 const Services = () => {
@@ -9,6 +10,12 @@ const Services = () => {
 
   return (
     <div className="pt-32 pb-24 bg-gray-50 min-h-screen">
+      <Helmet>
+        <title>Tibbiy Xizmatlar | As-salaam Clinic Andijon</title>
+        <meta name="description" content="As-salaam klinikasining zamonaviy tibbiy xizmatlari: UZI, EKG, laboratoriya, fizioterapiya, diagnostika va davolash usullari." />
+        <meta name="keywords" content="tibbiy xizmatlar Andijon, UZI Andijonda, EKG, laboratoriya tahlillari, fizioterapiya, diagnostika" />
+        <link rel="canonical" href="https://as-salaam-clinic.vercel.app/services" />
+      </Helmet>
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-3xl mx-auto mb-20">
           <h1 className="text-3xl md:text-5xl font-bold mb-6 text-gray-900">{t('services.title')}</h1>

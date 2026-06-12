@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaPaperPlane } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
@@ -31,6 +32,12 @@ const Contact = () => {
 
   return (
     <div className="pt-32 pb-24 bg-gray-50 min-h-screen">
+      <Helmet>
+        <title>Bog'lanish va Qabul | As-salaam Clinic Andijon</title>
+        <meta name="description" content="As-salaam klinikasi bilan bog'lanish. Manzil: Andijon shahar, ADTI qarshisida. Telefon: +998 90 544 77 07. Qabulga yozilish va ma'lumot olish." />
+        <meta name="keywords" content="As-salaam clinic manzil, klinika nomeri Andijon, qabulga yozilish, shifokor qabuli" />
+        <link rel="canonical" href="https://as-salaam-clinic.vercel.app/contact" />
+      </Helmet>
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="text-3xl md:text-5xl font-bold mb-6 text-gray-900">{ru ? 'Свяжитесь с нами' : "Biz bilan bog'lanish"}</h1>

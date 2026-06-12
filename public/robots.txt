@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://as-salaam-clinic.uz/sitemap.xml
+Sitemap: https://as-salaam-clinic.vercel.app/sitemap.xml

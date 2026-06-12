@@ -2,6 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import PremiumDoctorCard from '../components/PremiumDoctorCard';
+import { Helmet } from 'react-helmet-async';
 
 const Doctors = () => {
   const doctors = useSelector((state) => state.doctors.items);
@@ -10,6 +11,12 @@ const Doctors = () => {
 
   return (
     <div className="pt-32 pb-24 bg-gray-50 min-h-screen">
+      <Helmet>
+        <title>Malakali Shifokorlar | As-salaam Clinic Andijon</title>
+        <meta name="description" content="Klinikamizdagi eng yaxshi shifokorlar: tajribali neyroxirurg, kardiolog, ortoped va pediatrlar xizmatingizda." />
+        <meta name="keywords" content="eng yaxshi neyroxirurg Andijon, tajribali ortoped, kardiolog, pediatr, nevrolog, As-salaam shifokorlari" />
+        <link rel="canonical" href="https://as-salaam-clinic.vercel.app/doctors" />
+      </Helmet>
       <div className="container mx-auto px-4 md:px-6">
         
         {/* PAGE HEADER */}

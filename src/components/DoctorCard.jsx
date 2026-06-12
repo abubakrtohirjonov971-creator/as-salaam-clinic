@@ -18,7 +18,7 @@ const DoctorCard = ({ doctor }) => {
         <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl">
           <img 
             src={doctor.image} 
-            alt={doctor.name} 
+            alt={`${doctor.name} - Andijonda tibbiy xizmat`} 
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
           />
         </div>

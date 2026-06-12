@@ -29,7 +29,7 @@ const ServiceCard = ({ service }) => {
       <div className="relative h-56 overflow-hidden">
         <img 
           src={service.image} 
-          alt={tDB(service.title, lang)} 
+          alt={`${tDB(service.title, lang)} - Andijonda tibbiy xizmat`} 
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
         />
         <div className="absolute top-4 left-4 w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary shadow-lg">

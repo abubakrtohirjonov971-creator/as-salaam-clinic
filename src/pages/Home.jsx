@@ -15,8 +15,10 @@ const Home = () => {
   return (
     <div className="flex flex-col">
       <Helmet>
-        <title>As-salaam Clinic — Andijondagi zamonaviy tibbiyot markazi</title>
-        <meta name="description" content="Kardiologiya, Nevrologiya, Urologiya va zamonaviy labaratoriya xizmatlari. Andijon shahridagi ishonchli klinikangiz." />
+        <title>As-salaam Clinic | Andijondagi zamonaviy tibbiyot markazi va neyroxirurgiya</title>
+        <meta name="description" content="Andijon shahrida yuqori sifatli tibbiy xizmatlar: Neyroxirurgiya, Ortopediya, Kardiologiya, UZI, EKG va tajribali shifokorlar." />
+        <meta name="keywords" content="Andijon neyroxirurgiya, Andijon ortoped, As-salaam clinic, tibbiyot markazi, xususiy klinika, kardiolog, pediatr" />
+        <link rel="canonical" href="https://as-salaam-clinic.vercel.app/" />
       </Helmet>
 
       {/* 1. HERO SECTION */}
