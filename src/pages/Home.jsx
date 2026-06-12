@@ -57,7 +57,7 @@ const Home = () => {
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="lg:w-1/2 space-y-8">
               <div className="inline-block py-1 px-4 bg-blue-50 text-primary font-bold rounded-lg">{t('about.badge')}</div>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900">{t('about.title')}</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 break-words [word-break:break-word]">{t('about.title')}</h2>
               <p className="text-lg text-gray-600 leading-relaxed">{t('about.desc')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[t('about.feat1'), t('about.feat2'), t('about.feat3'), t('about.feat4')].map((feature, i) => (

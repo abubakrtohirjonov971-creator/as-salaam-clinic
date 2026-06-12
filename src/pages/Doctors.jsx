@@ -1,9 +1,12 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import PremiumDoctorCard from '../components/PremiumDoctorCard';
 
 const Doctors = () => {
   const doctors = useSelector((state) => state.doctors.items);
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
 
   return (
     <div className="pt-32 pb-24 bg-gray-50 min-h-screen">
@@ -11,9 +14,9 @@ const Doctors = () => {
         
         {/* PAGE HEADER */}
         <div className="text-center max-w-4xl mx-auto mb-20">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900 tracking-tight">Bizning malakali shifokorlarimiz</h1>
-          <p className="text-xl md:text-2xl text-gray-600">
-            Andijon shahridagi eng tajribali mutaxassislar sizning xizmatingizda.
+          <h1 className="text-3xl md:text-6xl font-bold mb-6 text-gray-900 tracking-tight">{lang === 'ru' ? 'Наши квалифицированные врачи' : 'Bizning malakali shifokorlarimiz'}</h1>
+          <p className="text-lg md:text-2xl text-gray-600">
+            {lang === 'ru' ? 'Самые опытные специалисты города Андижана к вашим услугам.' : 'Andijon shahridagi eng tajribali mutaxassislar sizning xizmatingizda.'}
           </p>
         </div>
         
