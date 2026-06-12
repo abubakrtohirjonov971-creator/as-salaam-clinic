@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaTelegram, FaInstagram, FaFacebook } from 'react-icons/fa';
+import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaTelegram, FaInstagram, FaYoutube } from 'react-icons/fa';
 import logo from '../assets/logo_transparent.png';
 
 const Footer = () => {
@@ -19,14 +19,14 @@ const Footer = () => {
             </Link>
             <p className="text-gray-400 leading-relaxed">{t('footer.desc')}</p>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
+              <a href="https://t.me/Doctor_Erkin_Egamberdiyevich" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
                 <FaTelegram size={20} />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
+              <a href="https://www.instagram.com/doctor_erkin_egamberdiyevich?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
                 <FaInstagram size={20} />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
-                <FaFacebook size={20} />
+              <a href="https://youtube.com/@as_salaam_clinic?si=jCGNibrFNxwlSSoO" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
+                <FaYoutube size={20} />
               </a>
             </div>
           </div>
