@@ -1,13 +1,51 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabase } from '../lib/supabase';
 
+const fallbackDoctors = [
+  {
+    id: 'erkinbek',
+    name: 'Haydarov Erkinbek',
+    specialty: 'Neyroxirurg',
+    experience: '15+ yil',
+    image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=400&q=80',
+    about: 'Miya va asab tizimi bo‘yicha tajribali neyroxirurg.',
+    methods: ['Neyroxirurgik operatsiyalar', 'Ortoped', 'MRT tahlil'],
+    diseases: ['Miya kasalliklari', 'Umurtqa muammolari', 'Nevrologik holatlar']
+  },
+  {
+    id: 'ibrohimjon',
+    name: 'Ismoiljonov Ibrohimjon',
+    specialty: 'Xirurg',
+    experience: '2+ yil',
+    image: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=400&q=80',
+    about: 'Murakkab jarrohlik amaliyotlari bo‘yicha mutaxassis.',
+    methods: ['Operatsiyalar', 'Diagnostika', 'Jarrohlik nazorati'],
+    diseases: ['Ichki organlar', 'Jarrohlik patologiyalari']
+  },
+  {
+    id: 'abror',
+    name: 'Davlatov Abror',
+    specialty: 'Vertebrolog',
+    experience: '3+ yil',
+    image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80',
+    about: 'Umurtqa va bel og‘rig‘i davolash bo‘yicha mutaxassis.',
+    methods: ['Manual terapiya', 'Reabilitatsiya', 'Vertebrologiya'],
+    diseases: ['Osteoxondroz', 'Skolioz', 'Bel og‘rig‘i']
+  }
+];
+
 // Supabase orqali shifokorlarni olish
 export const fetchDoctors = createAsyncThunk(
   'doctors/fetchDoctors',
   async () => {
-    const { data, error } = await supabase.from('doctors').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.from('doctors').select('*').order('created_at', { ascending: false });
+      if (error || !data || data.length === 0) return fallbackDoctors;
+      return data;
+    } catch (err) {
+      console.warn("Supabase xatoligi (Doctors). Zaxira malumotlar ishlatilmoqda.");
+      return fallbackDoctors;
+    }
   }
 );
 
