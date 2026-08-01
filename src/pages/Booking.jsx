@@ -195,37 +195,7 @@ const Booking = () => {
     const initials = formData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
     try {
-      // Double-check slot is still free
-      const { data: check } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('date', selectedDate)
-        .eq('time', selectedTime)
-        .eq('doctor', doctorName);
-
-      if (check && check.length > 0) {
-        setErrors({ time: 'Bu vaqt band bo\'lib qoldi! Boshqa vaqtni tanlang.' });
-        setBusySlots(prev => [...prev, selectedTime]);
-        setSelectedTime('');
-        setIsSubmitting(false);
-        return;
-      }
-
-      const { error } = await supabase.from('bookings').insert([{
-        name: formData.name,
-        phone: formData.phone,
-        date: selectedDate,
-        time: selectedTime,
-        doctor: doctorName,
-        room: 'Belgilanmagan',
-        status: 'Kutilmoqda',
-        statuscolor: 'text-yellow-700 bg-yellow-50',
-        color: 'bg-blue-100 text-blue-700',
-        initials: initials || 'N',
-      }]);
-      if (error) throw error;
-
-      // Telegram
+      // 1. Telegram ga yuborish (birinchi navbatda, chunki baza ishlamay qolgan bo'lishi mumkin)
       const BOT_TOKEN = '8121379847:AAHKoY9Nj1HzPSOx4hIbV1CF6kYhnY91WSU';
       const CLINIC_CHAT_ID = '8054469979';
       const dateFormatted = new Date(selectedDate).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -237,11 +207,41 @@ const Booking = () => {
         `📅 Sana: *${dateFormatted}*\n` +
         `⏰ Vaqt: *${selectedTime}*\n\n` +
         `🏥 _As-salaam Clinic Navbat Tizimi_`;
+        
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: CLINIC_CHAT_ID, text: msg, parse_mode: 'Markdown' }),
       }).catch(console.error);
+
+      // 2. Supabase ga yozishga urinib ko'rish (xatolik bersa ham formani to'xtatmaydi)
+      try {
+        const { data: check } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('date', selectedDate)
+          .eq('time', selectedTime)
+          .eq('doctor', doctorName);
+
+        if (check && check.length > 0) {
+          console.warn("Baza bo'yicha bu vaqt band bo'lishi mumkin, lekin Telegramga yuborildi.");
+        } else {
+          await supabase.from('bookings').insert([{
+            name: formData.name,
+            phone: formData.phone,
+            date: selectedDate,
+            time: selectedTime,
+            doctor: doctorName,
+            room: 'Belgilanmagan',
+            status: 'Kutilmoqda',
+            statuscolor: 'text-yellow-700 bg-yellow-50',
+            color: 'bg-blue-100 text-blue-700',
+            initials: initials || 'N',
+          }]);
+        }
+      } catch (dbErr) {
+        console.warn('Database error ignored:', dbErr);
+      }
 
       setShowSuccess(true);
       setFormData({ name: '', phone: '' });
