@@ -89,6 +89,7 @@ const AdminLayout = () => {
     { name: 'Kassa', icon: <MdAccountBalanceWallet size={22} />, path: '/admin/finance' },
     { name: 'Davolash', icon: <MdHealing size={22} />, path: '/admin/treatments' },
     { name: 'Tahlillar', icon: <MdScience size={22} />, path: '/admin/labs' },
+    { name: 'AI Farmatsevt', icon: <MdAutoAwesome size={22} className="text-yellow-500" />, path: '/admin/ai-drugs' },
     { name: 'Sozlamalar', icon: <MdSettings size={22} />, path: '/admin/settings' },
   ];
 
