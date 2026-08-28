@@ -283,6 +283,105 @@ const SERVICE_CONTENT = {
       { q: "Fizioterapiya qachon tavsiya etilmaydi?", a: "Onkologik kasalliklar, homiladorlik, qon ketishi va yuqori harorat paytida." },
       { q: "Bitta seans qancha davom etadi?", a: "Usulga qarab 10-30 daqiqa." }
     ]
+  },
+
+  'ortoped': {
+    fullDesc: `Ortopediya va Vertebrologiya — tayanch-harakat tizimi hamda umurtqa pog'onasining tug'ma yoki orttirilgan deformatsiyalarini davolash sohasidir. As-salaam klinikasida vertebrolog va ortoped shifokorlar umurtqa churrasi (grijasi), skolioz va bo'g'im kasalliklarini jarrohliksiz, kompleks usullar bilan samarali davolaydi.`,
+    symptoms: [
+      "Umurtqa pog'onasidagi og'riq va churra (grija)",
+      "Oyoq kaftining tekisligi (yassi tabonlik)",
+      "Orqa miya egriligi (skolioz, kifoz)",
+      "Bo'g'imlarda og'riq, shish va qisirlash",
+      "Yurishda va harakatda qiyinchilik",
+      "Bo'yin va bel sohasidagi qotib qolishlar",
+      "Artrit va artroz kasalliklari",
+      "Yelka va tizza og'riqlari"
+    ],
+    treatments: [
+      { title: "Vertebrologik diagnostika", desc: "Umurtqa pog'onasi va bo'g'imlarni to'liq ko'rikdan o'tkazish." },
+      { title: "Korset va ortopedik taglik", desc: "Individual tayyorlanadigan ortopedik vositalar." },
+      { title: "Manual terapiya va LFK", desc: "Umurtqani to'g'rilash va maxsus davolash mashqlari." },
+      { title: "Fizioterapiya va Massaj", desc: "Og'riqni zudlik bilan yo'qotuvchi va to'qimalarni tiklovchi muolajalar." }
+    ],
+    advantages: [
+      "Jarrohliksiz davolash",
+      "Skolioz va grija terapiyasi",
+      "Tajribali vertebrolog",
+      "Individual mashqlar",
+      "Tez og'riq qoldirish",
+      "Bolalar va kattalarga"
+    ],
+    faqs: [
+      { q: "Umurtqa grijasini operatsiyasiz davolasa bo'ladimi?", a: "Ha! As-salaam klinikasida fizioterapiya, manual terapiya va LFK yordamida umurtqa grijasi operatsiyasiz samarali davolanadi." },
+      { q: "Skoliozni necha yoshgacha davolash mumkin?", a: "Qanchalik erta murojaat qilinsa, natija shunchalik yuqori bo'ladi. Bolalar va o'smirlarda to'liq to'g'rilash imkoni bor." },
+      { q: "Qancha seans kerak bo'ladi?", a: "Kasallik darajasiga qarab odatda 10-15 seansdan iborat kurs tavsiya etiladi." }
+    ]
+  },
+
+  'travmatologiya': {
+    fullDesc: `Travmatologiya va Ortopediya — suyaklar, bo'g'imlar, paylar va mushaklarning shikastlanishi hamda o'tkir jarohatlarini davolash sohasidir. As-salaam klinikasida tajribali travmatologlar har qanday shikastlanishlarni tezkor aniqlab, gips, bandaj va reabilitatsiya muolajalarini amalga oshiradi.`,
+    symptoms: [
+      "Suyak sinishi va yorilishi",
+      "Bo'g'im chiqishi (vyvix)",
+      "Pay va mushaklarning cho'zilishi va uzilishi",
+      "Sport jarohatlari",
+      "Bo'g'im va tizza og'rig'i hamda shishishi",
+      "Jarohatdan keyingi harakat cheklanishi",
+      "Suyak va bo'g'im deformatsiyalari",
+      "Maishiy va baxtsiz hodisa jarohatlari"
+    ],
+    treatments: [
+      { title: "Rentgen diagnostika", desc: "Suyak sinishi va jarohatlarni aniq aniqlash." },
+      { title: "Gips va fiksatsiya", desc: "Suyak sinishida zamonaviy yengil gips va fiksatorlar qo'yish." },
+      { title: "Bo'g'im chiqishini joyiga solish", desc: "Bo'g'im chiqishini og'riqsiz joyiga solish va bog'lash." },
+      { title: "Reabilitatsiya va LFK", desc: "Jarohatdan keyin harakatni to'liq tiklash kurslari." }
+    ],
+    advantages: [
+      "Tezkor birinchi yordam",
+      "Zamonaviy gips",
+      "Tajribali travmatolog",
+      "Reabilitatsiya xizmati",
+      "Operatsiyasiz tiklash",
+      "Barcha yoshdagilarga"
+    ],
+    faqs: [
+      { q: "Suyak sinsa nima qilish kerak?", a: "Shikastlangan sohani harakatlantirmang va darhol klinikaga murojaat qiling." },
+      { q: "Gips o'rniga yengil plastmassa gips qo'ysa bo'ladimi?", a: "Ha, klinikamizda suv o'tkazmaydigan yengil zamonaviy gipslar mavjud." },
+      { q: "Jarohatdan so'ng harakat qachon tiklanadi?", a: "Reabilitatsiya kursi bilan 3-6 hafta ichida harakat to'liq tiklanadi." }
+    ]
+  },
+
+  'laboratoriya': {
+    fullDesc: `Laboratoriya diagnostikasi — qon, siydik va boshqa biologik namunalar bo'yicha organizm holatini aniq aniqlovchi diagnostika sohasidir. As-salaam klinikasida Germaniya va Yaponiya ishlab chiqargan avtomatik tahlil apparatlari o'rnatilgan bo'lib, tahlil natijalari bir necha soat ichida tayyor bo'ladi.`,
+    symptoms: [
+      "Umumiy holsizlik va immunitet pasayishi",
+      "Qonda shakar (glyukoza) darajasini tekshirish",
+      "Gormonlar va qalqonsimon bez tahlili",
+      "Jigar va buyrak ko'rsatkichlari (Biokimyo)",
+      "Infeksiyalar va viruslar tahlili (PChR/IFT)",
+      "Gematologiya va qon tahlili",
+      "Allergiyaga tahlillar",
+      "Operatsiyadan oldingi tahlillar to'plami"
+    ],
+    treatments: [
+      { title: "Umumiy qon va siydik tahlili", desc: "Organizmdagi yallig'lanish va gemoglobin darajasini aniqlash." },
+      { title: "Biokimyoviy tahlil", desc: "Jigar, buyrak, xolesterin va fermentlar holatini tekshirish." },
+      { title: "Gormonlar tahlili", desc: "Qalqonsimon bez, jinsiy va buyrak usti bezi gormonlari." },
+      { title: "PRC va IFT diagnostika", desc: "Virusli va bakterial infeksiyalarni erta bosqichda aniqlash." }
+    ],
+    advantages: [
+      "100% aniq natija",
+      "Avtomatlashgan apparatlar",
+      "Tezkor tayyor bo'lish",
+      "Tahlil natijasi Telegramga",
+      "Og'riqsiz qon olish",
+      "Gigiyenik xavfsizlik"
+    ],
+    faqs: [
+      { q: "Qon tahliliga och qoringa kelish shartmi?", a: "Ha, ko'pchilik biokimyoviy va shakar tahlillari uchun ertalab och qoringa kelish tavsiya etiladi." },
+      { q: "Tahlil natijasi qachon tayyor bo'ladi?", a: "Umumiy tahlillar 1-2 soatda, gormonal tahlillar o'sha kunning o'zida tayyor bo'ladi." },
+      { q: "Natijani elektron shaklda olsam bo'ladimi?", a: "Ha, natijalar tahlil tayyor bo'lishi bilan Telegramingizga yuboriladi." }
+    ]
   }
 };
 
@@ -296,13 +395,56 @@ const ServiceDetail = () => {
     return <Navigate to="/services" />;
   }
 
-  const content = SERVICE_CONTENT[service.title] || {
-    fullDesc: service.desc,
-    symptoms: [],
-    treatments: [],
-    advantages: [],
-    faqs: []
+  // Smart key matcher for SERVICE_CONTENT
+  const getServiceContent = (srv) => {
+    if (!srv) return null;
+    const searchKeys = [
+      srv.id,
+      srv.title,
+      srv.id?.toLowerCase(),
+      srv.title?.toLowerCase()
+    ];
+    for (const k of searchKeys) {
+      if (k && SERVICE_CONTENT[k]) return SERVICE_CONTENT[k];
+    }
+    for (const key in SERVICE_CONTENT) {
+      if (
+        srv.id?.toLowerCase().includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(srv.id?.toLowerCase()) ||
+        srv.title?.toLowerCase().includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(srv.title?.toLowerCase())
+      ) {
+        return SERVICE_CONTENT[key];
+      }
+    }
+    return {
+      fullDesc: srv.description || srv.desc || "Ushbu tibbiy xizmat bo'yicha klinikamizda yuqori malakali shifokorlar ko'rigi va zamonaviy diagnostika o'tkaziladi.",
+      symptoms: [
+        "Profilaktik ko'rik va mutaxassis maslahati",
+        "Kasallik alomatlarini o'z vaqtida aniqlash",
+        "Tibbiy ko'rsatmalar bo'yicha diagnostika",
+        "Sog'lom turmush tarzini saqlash va davolash"
+      ],
+      treatments: [
+        { title: "Mutaxassis ko'rigi", desc: "Shifokor bilan to'liq suhbat va ko'rik." },
+        { title: "Diagnostika va tahlillar", desc: "Kasallikka mos ravishda tekshiruvlar tayinlash." },
+        { title: "Davolash rejasi", desc: "Individual davolash va profilaktika kursi." }
+      ],
+      advantages: [
+        "Tajribali shifokorlar",
+        "Zamonaviy uskunalar",
+        "Qulay sharoitlar",
+        "Tezkor va aniq natija",
+        "Individual yondashuv"
+      ],
+      faqs: [
+        { q: "Qabulga qanday yozilish mumkin?", a: "Saytimizdagi 'Qabulga yozilish' tugmasi yoki telefon orqali oldindan yozilishingiz mumkin." },
+        { q: "Qabul qancha davom etadi?", a: "Dastlabki ko'rik odatda 15-30 daqiqa davom etadi." }
+      ]
+    };
   };
+
+  const content = getServiceContent(service);
 
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
