@@ -91,7 +91,9 @@ const PremiumDoctorCard = ({ doctor }) => {
               <span className="w-2 h-6 bg-blue-300 rounded-full flex-shrink-0"></span>
               {ru ? 'Образование и опыт' : "Ta'lim va tajriba"}
             </h4>
-            <p className="text-gray-600 leading-relaxed text-sm md:text-base">{doctor.education}</p>
+            <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+              {ru ? doctor.education_ru || doctor.education : doctor.education}
+            </p>
           </div>
         </div>
 

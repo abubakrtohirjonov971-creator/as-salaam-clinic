@@ -11,6 +11,8 @@ const fallbackDoctors = [
     image: '/doctors/erkinbek.png',
     about: 'Miya va asab tizimi bo‘yicha tajribali neyroxirurg.',
     about_ru: 'Опытный нейрохирург по заболеваниям мозга и нервной системы.',
+    education: 'Toshkent Tibbiyot Akademiyasi va Rossiya davlat tibbiyot universiteti (klinik ordinatura). Turkiyada malaka oshirgan.',
+    education_ru: 'Ташкентская медицинская академия и Российский государственный медицинский университет. Проходил стажировку в Турции.',
     methods: ['Neyroxirurgik operatsiyalar', 'Ortoped', 'MRT tahlil'],
     diseases: ['Miya kasalliklari', 'Umurtqa muammolari', 'Nevrologik holatlar']
   },
@@ -23,6 +25,8 @@ const fallbackDoctors = [
     image: '/doctors/ibrohimjon.png',
     about: 'Murakkab jarrohlik amaliyotlari bo‘yicha mutaxassis.',
     about_ru: 'Специалист по сложным хирургическим операциям.',
+    education: 'Andijon Davlat Tibbiyot Instituti va Respublika Neyroxirurgiya markazi. Janubiy Koreyada mikrojarrohlik bo‘yicha tajriba orttirgan.',
+    education_ru: 'Андижанский государственный медицинский институт. Опыт в микрохирургии в Южной Корее.',
     methods: ['Operatsiyalar', 'Diagnostika', 'Jarrohlik nazorati'],
     diseases: ['Ichki organlar', 'Jarrohlik patologiyalari']
   },
@@ -35,6 +39,8 @@ const fallbackDoctors = [
     image: '/doctors/abror.png',
     about: 'Umurtqa va bel og‘rig‘i davolash bo‘yicha mutaxassis.',
     about_ru: 'Специалист по лечению позвоночника и болей в спине.',
+    education: 'Samarqand Davlat Tibbiyot Instituti, umurtqa pog‘onasi patologiyalari bo‘yicha xalqaro sertifikatlar sohibi.',
+    education_ru: 'Самаркандский государственный медицинский институт, обладатель международных сертификатов по патологии позвоночника.',
     methods: ['Manual terapiya', 'Reabilitatsiya', 'Vertebrologiya'],
     diseases: ['Osteoxondroz', 'Skolioz', 'Bel og‘rig‘i']
   }
