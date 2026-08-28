@@ -17,7 +17,8 @@ import {
   MdLogout,
   MdAccountBalanceWallet,
   MdCode,
-  MdStar
+  MdStar,
+  MdAutoAwesome
 } from 'react-icons/md';
 import { FaTelegram } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
