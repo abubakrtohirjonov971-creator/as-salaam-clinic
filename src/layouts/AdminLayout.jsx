@@ -321,13 +321,13 @@ const AdminLayout = () => {
 
             {/* Telegram Link Button */}
             <a
-              href="https://t.me/dextrx"
+              href="https://t.me/bytoxirov"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-500/30 active:scale-95 flex items-center justify-center gap-3 text-base text-center mb-3"
             >
               <FaTelegram size={22} />
-              <span>Telegram orqali yozish (@dextrx)</span>
+              <span>Telegram orqali yozish (@bytoxirov)</span>
             </a>
 
             <button
