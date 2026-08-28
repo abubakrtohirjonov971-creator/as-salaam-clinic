@@ -77,6 +77,13 @@ export const fetchServices = createAsyncThunk(
     try {
       const { data, error } = await supabase.from('services').select('*').order('created_at', { ascending: false });
       if (error || !data || data.length === 0) return fallbackServices;
+
+      // Ensure all 6 services are always displayed by merging missing fallback items
+      if (data.length < fallbackServices.length) {
+        const existingIds = new Set(data.map(item => item.id || item.title?.toLowerCase()));
+        const missing = fallbackServices.filter(item => !existingIds.has(item.id));
+        return [...data, ...missing];
+      }
       return data;
     } catch (err) {
       console.warn("Supabase xatoligi (Services). Zaxira malumotlar ishlatilmoqda.");
