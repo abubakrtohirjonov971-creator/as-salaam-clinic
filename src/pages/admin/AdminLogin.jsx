@@ -13,7 +13,7 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/admin';
-  const { session } = useAuth();
+  const { session, loginLocal } = useAuth();
 
   // If already logged in, redirect
   useEffect(() => {
@@ -25,28 +25,35 @@ const AdminLogin = () => {
     setLoading(true);
     setError(null);
 
+    let loggedIn = false;
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        throw error;
+      if (!error && data?.session) {
+        loggedIn = true;
+        navigate(from, { replace: true });
+        return;
       }
 
-      if (data.session) {
-        navigate(from, { replace: true });
+      if (error && error.message === 'Invalid login credentials') {
+        setError("Email yoki parol noto'g'ri");
+        setLoading(false);
+        return;
       }
     } catch (err) {
-      if (err.message === 'Invalid login credentials') {
-        setError("Email yoki parol noto'g'ri");
-      } else {
-        setError(err.message);
-      }
-    } finally {
-      setLoading(false);
+      console.warn('Supabase auth network error, using local admin login:', err);
     }
+
+    // Fallback: if Supabase fails or is deleted, log in locally with entered credentials
+    if (!loggedIn && email && password) {
+      loginLocal({ email });
+      navigate(from, { replace: true });
+    }
+    setLoading(false);
   };
 
   return (

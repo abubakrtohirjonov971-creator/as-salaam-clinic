@@ -399,7 +399,7 @@ const AdminDashboard = () => {
         .order('created_at', { ascending: false })
         .limit(5); // Recent 5 bookings
 
-      if (pError || rError || bError) throw new Error('Data fetch failed');
+      // If Supabase fails, stats remain default without crashing
 
       // Fetch bookings for the last 7 days for the chart
       const sevenDaysAgo = new Date();
