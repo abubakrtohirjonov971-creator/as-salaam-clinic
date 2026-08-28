@@ -15,46 +15,56 @@ import {
   MdSearch,
   MdClose,
   MdLogout,
-  MdAccountBalanceWallet
+  MdAccountBalanceWallet,
+  MdCode,
+  MdStar
 } from 'react-icons/md';
+import { FaTelegram } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
 
 const AdminLayout = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [pendingBookings, setPendingBookings] = useState([]);
+  const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   
   const profile = useSelector(state => state.settings.profile);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('admin_session');
     navigate('/admin/login');
   };
 
   // Fetch pending (Kutilmoqda) bookings count
   const fetchPendingBookings = async () => {
-    const { data, count } = await supabase
-      .from('bookings')
-      .select('*', { count: 'exact' })
-      .eq('status', 'Kutilmoqda')
-      .order('created_at', { ascending: false })
-      .limit(10);
-    
-    setPendingCount(count || 0);
-    setPendingBookings(data || []);
+    try {
+      const { data, count } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact' })
+        .eq('status', 'Kutilmoqda')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      setPendingCount(count || 0);
+      setPendingBookings(data || []);
+    } catch (e) {}
   };
 
   useEffect(() => {
     fetchPendingBookings();
 
     // Real-time: update badge when bookings change
-    const channel = supabase
-      .channel('layout-bookings-' + Date.now())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
-        fetchPendingBookings();
-      })
-      .subscribe();
+    let channel;
+    try {
+      channel = supabase
+        .channel('layout-bookings-' + Date.now())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+          fetchPendingBookings();
+        })
+        .subscribe();
+    } catch (e) {}
 
     // Polling fallback: refresh every 10 seconds
     const interval = setInterval(fetchPendingBookings, 10000);
@@ -64,7 +74,7 @@ const AdminLayout = () => {
     window.addEventListener('booking-updated', handleBookingUpdated);
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) try { supabase.removeChannel(channel); } catch (e) {}
       clearInterval(interval);
       window.removeEventListener('booking-updated', handleBookingUpdated);
     };
@@ -127,6 +137,23 @@ const AdminLayout = () => {
             </NavLink>
           ))}
         </nav>
+
+        {/* DEVELOPER CARD IN SIDEBAR */}
+        <div className="mx-4 mb-3 p-3.5 bg-gradient-to-br from-gray-900 via-blue-950 to-indigo-900 text-white rounded-2xl shadow-md border border-blue-500/20">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-300 flex items-center gap-1">
+              <MdCode size={13} /> Sayt Yaratuvchisi
+            </span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          </div>
+          <p className="text-xs font-bold text-white mb-2 leading-snug">Dasturchi bilan bog'lanish / Maqtov 🌟</p>
+          <button 
+            onClick={() => setIsDevModalOpen(true)}
+            className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all text-center flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+          >
+            <span>Yaratuvchiga yozish</span> →
+          </button>
+        </div>
 
         {/* Sidebar footer - pending summary */}
         {pendingCount > 0 && (
@@ -223,7 +250,11 @@ const AdminLayout = () => {
               )}
             </div>
 
-            <button className="text-gray-400 hover:text-gray-600 transition-colors">
+            <button 
+              onClick={() => setIsDevModalOpen(true)}
+              className="text-gray-400 hover:text-primary transition-colors flex items-center gap-1" 
+              title="Sayt yaratuvchisi bilan bog'lanish"
+            >
               <MdHelpOutline size={24} />
             </button>
             <div className="w-px h-8 bg-gray-200"></div>
@@ -249,6 +280,65 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* DEVELOPER MODAL */}
+      {isDevModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-gradient-to-br from-gray-900 via-blue-950 to-indigo-950 rounded-3xl max-w-md w-full p-7 text-white shadow-2xl border border-blue-500/30 relative overflow-hidden">
+            
+            {/* Close button */}
+            <button 
+              onClick={() => setIsDevModalOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-white bg-white/10 p-2 rounded-full backdrop-blur-sm transition-all"
+            >
+              <MdClose size={20} />
+            </button>
+
+            {/* Header info */}
+            <div className="flex items-center gap-4 mb-6 pt-2">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white text-3xl shadow-lg border border-white/20">
+                💻
+              </div>
+              <div>
+                <span className="inline-block px-3 py-1 bg-blue-500/20 border border-blue-400/30 text-blue-300 font-extrabold text-[10px] rounded-full uppercase tracking-wider mb-1">
+                  Lead Software Engineer
+                </span>
+                <h3 className="text-2xl font-black text-white">Sayt Yaratuvchisi</h3>
+                <p className="text-xs text-gray-400">As-salaam Clinic Raqamli Tizimi</p>
+              </div>
+            </div>
+
+            {/* Praise / Info Box */}
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 mb-6 space-y-3">
+              <div className="flex items-center gap-2 text-yellow-400 font-bold text-sm">
+                <MdStar size={18} />
+                <span>Sayt egasidan minnatdorchilik va takliflar!</span>
+              </div>
+              <p className="text-sm text-gray-200 leading-relaxed font-medium">
+                Klinika tizimiga yangiliklar qo'shish, maqtovlar, texnik yordam yoki takliflar uchun yaratuvchining shaxsiy Telegram manziliga bevosita yozishingiz mumkin! 🚀
+              </p>
+            </div>
+
+            {/* Telegram Link Button */}
+            <a
+              href="https://t.me/dextrx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-500/30 active:scale-95 flex items-center justify-center gap-3 text-base text-center mb-3"
+            >
+              <FaTelegram size={22} />
+              <span>Telegram orqali yozish (@dextrx)</span>
+            </a>
+
+            <button
+              onClick={() => setIsDevModalOpen(false)}
+              className="w-full py-3 bg-white/10 hover:bg-white/20 text-gray-300 font-bold rounded-xl transition-all text-sm"
+            >
+              Yopish
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Backdrop for notification panel */}
       {showNotifPanel && (
