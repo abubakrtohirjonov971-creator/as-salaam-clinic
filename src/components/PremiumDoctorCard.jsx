@@ -102,7 +102,9 @@ const PremiumDoctorCard = ({ doctor }) => {
               <span className="w-2 h-6 bg-blue-400 rounded-full flex-shrink-0"></span>
               {ru ? 'Методы лечения' : 'Davolash usullari'}
             </h4>
-            <p className="text-gray-600 leading-relaxed text-sm md:text-base">{doctor.methods}</p>
+            <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+              {Array.isArray(doctor.methods) ? doctor.methods.join(', ') : doctor.methods}
+            </p>
           </div>
           <div>
             <h4 className="font-bold text-gray-900 mb-4 text-lg md:text-xl flex items-center gap-3">

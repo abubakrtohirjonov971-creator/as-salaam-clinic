@@ -151,28 +151,40 @@ const Booking = () => {
     const doctorName = DOCTORS.find(d => d.id === selectedDoctor)?.name || '';
 
     const fetchBusy = async () => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('time, status')
-        .eq('date', selectedDate)
-        .eq('doctor', doctorName)
-        .in('status', ['Kutilmoqda', 'Qabul qilindi']); // cancelled ones free the slot
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('time, status')
+          .eq('date', selectedDate)
+          .eq('doctor', doctorName)
+          .in('status', ['Kutilmoqda', 'Qabul qilindi']);
 
-      if (error) { console.error('Busy slots error:', error); return; }
-      const busy = (data || []).map(b => b.time);
-      setBusySlots(busy);
-      if (busy.includes(selectedTime)) setSelectedTime('');
+        if (error) { console.warn('Busy slots warning:', error.message); return; }
+        const busy = (data || []).map(b => b.time);
+        setBusySlots(busy);
+        if (busy.includes(selectedTime)) setSelectedTime('');
+      } catch (err) {
+        console.warn('Busy slots fetch failed:', err);
+      }
     };
 
     fetchBusy();
 
-    // Real-time: refresh when bookings table changes
-    const channel = supabase
-      .channel('busy-slots-' + selectedDate + '-' + selectedDoctor)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchBusy)
-      .subscribe();
+    let channel;
+    try {
+      channel = supabase
+        .channel('busy-slots-' + selectedDate + '-' + selectedDoctor)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchBusy)
+        .subscribe();
+    } catch (e) {
+      // ignore realtime errors when DB is offline
+    }
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch (e) {}
+      }
+    };
   }, [selectedDoctor, selectedDate]);
 
   const validate = () => {

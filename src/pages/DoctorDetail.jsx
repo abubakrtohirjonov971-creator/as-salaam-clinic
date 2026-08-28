@@ -43,7 +43,7 @@ const DoctorDetail = () => {
                     {doctor.experience}
                   </span>
                   <h1 className="text-2xl font-bold">{doctor.name}</h1>
-                  <p className="text-gray-300">{doctor.role}</p>
+                  <p className="text-gray-300">{doctor.specialty || doctor.role}</p>
                 </div>
               </div>
 
@@ -114,7 +114,12 @@ const DoctorDetail = () => {
                 {t('doctor.methods')}
               </h2>
               <ul className="space-y-4">
-                {(doctor.methods ? doctor.methods.split(',') : (doctor.certificates || [])).map((cert, idx) => (
+                {(Array.isArray(doctor.methods)
+                  ? doctor.methods
+                  : doctor.methods
+                  ? doctor.methods.split(',')
+                  : doctor.certificates || []
+                ).map((cert, idx) => (
                   <li key={idx} className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2 shrink-0"></div>
                     <span className="text-gray-700 font-medium">{cert.trim()}</span>

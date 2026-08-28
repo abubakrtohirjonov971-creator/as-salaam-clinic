@@ -39,7 +39,7 @@ const ServiceCard = ({ service }) => {
       <div className="p-8">
         <h3 className="text-xl font-bold mb-4 group-hover:text-primary transition-colors">{tDB(service.title, lang)}</h3>
         <p className="text-gray-600 mb-6 leading-relaxed line-clamp-2">
-          {tDB(service.desc, lang)}
+          {tDB(service.desc || service.description, lang)}
         </p>
         <Link 
           to={`/services/${service.id}`} 
