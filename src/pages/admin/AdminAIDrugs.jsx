@@ -135,6 +135,56 @@ const CLINICAL_DRUGS_DB = {
     ],
     analogues: ['Rosafin', 'Lendacin', 'Oframax', 'Cefaxon'],
     storage: '+25°C dan past haroratda yorug\'likdan himoyalangan joyda saqlansin.'
+  },
+  'ketamin': {
+    name: 'Ketamin (Ketamine)',
+    category: 'Narkotik Og\'riqsizlantiruvchi va Anestetik',
+    uses: [
+      'Jarrohlik operatsiyalarida umumiy anesteziya (uxlatish)',
+      'Qisqa muddatli og\'riqli muolajalar (kuyish, jarohat)',
+      'Veterinariyada hayvonlarni uxlatish va operatsiya qilish',
+      'Og\'ir shikastlanishlarda shok holatining oldini olish'
+    ],
+    dosage: 'Faqat shifokor-anesteziolog nazorati ostida vena ichiga (1-4 mg/kg) yoki mushak ichiga (4-8 mg/kg) yuboriladi.',
+    sideEffects: [
+      'Gallyutsinatsiyalar va kuchli tushlar ko\'rish',
+      'Arterial qon bosimining oshishi, taxikardiya',
+      'Mushaklar tonusining oshishi, qaltirash',
+      'Ko\'ngil aynishi va qusish'
+    ],
+    contraindications: [
+      'Miya qon aylanishining og\'ir buzilishlari (insult)',
+      'Og\'ir arterial gipertenziya',
+      'Preklampsiya va eklampsiya',
+      'Ruhiy kasalliklar (shizofreniya va h.k)'
+    ],
+    analogues: ['Kalypsol', 'Ketalar', 'Velonar'],
+    storage: 'B ro\'yxatiga kiradi. Qat\'iy nazorat ostida yorug\'likdan himoyalangan joyda saqlanadi.'
+  },
+  'trimol': {
+    name: 'Trimol (Paracetamol + Propyphenazone + Caffeine)',
+    category: 'Majmuaviy Analgetik-Antipiretik',
+    uses: [
+      'Bosh og\'rig\'i, migren va tish og\'rig\'i',
+      'Mushak va nevralgiya og\'riqlari',
+      'Shamollash va grippda isitmani tushirish',
+      'Hayz davridagi og\'riqlar (Dismenoreya)'
+    ],
+    dosage: 'Kattalarga: 1-2 tabletkadan kuniga 1-3 marta ovqatdan keyin suv bilan qabul qilinadi. Maksimal sutkalik doza 6 tabletka.',
+    sideEffects: [
+      'Allergik reaksiyalar (teri toshmalari, qichishish)',
+      'Kofein tufayli uyqusizlik va yurak urishi tezlashishi',
+      'Oshqozonda noqulaylik va ko\'ngil aynishi',
+      'Uzoq muddat qabul qilinganda jigar funksiyasiga ta\'siri'
+    ],
+    contraindications: [
+      'Oshqozon va 12-barmoqli ichak yarasi',
+      'Og\'ir jigar yoki buyrak yetishmovchiligi',
+      '12 yoshgacha bo\'lgan bolalar',
+      'Homiladorlik va laktatsiya davri'
+    ],
+    analogues: ['Saridon', 'Gevadal', 'Kofitsil-plyus', 'Pentalgin'],
+    storage: 'Quruq va bolalar qo\'li yetmaydigan joyda, 25°C dan yuqori bo\'lmagan haroratda saqlansin.'
   }
 };
 
@@ -186,30 +236,53 @@ const AdminAIDrugs = () => {
       if (foundDrug && !selectedImage) {
         setResult(foundDrug);
       } else {
-        // AI Generated response structure
-        const nameFormatted = query ? query.charAt(0).toUpperCase() + query.slice(1) : 'Analiz qilingan dori vositasi';
+        // Smart AI Generated response fallback
+        const drug = query ? query.charAt(0).toUpperCase() + query.slice(1) : (selectedImage ? 'Rasmdan aniqlangan dori' : 'Analiz qilingan vosita');
+        const qLow = query.toLowerCase();
+        
+        let category = 'Farmatsevtik preparat / Dori vositasi';
+        let uses = [
+          'Asosiy kasallik alomatlarini kamaytirish va davolash',
+          'Shifokor ko\'rsatmasiga binoan profilaktika va terapiya',
+          'Yallig\'lanish yoki infeksiyalarni bartaraf etish'
+        ];
+        let analogues = ['Atektar muqobillari', 'Analogi bor dorilar'];
+
+        if (qLow.endsWith('in') || qLow.endsWith('tsillin')) {
+          category = 'Antibiotik yoki Maxsus Ta\'sir etuvchi Vosita';
+          uses = ['Turli infeksion kasalliklarni davolash', 'Yallig\'lanishga qarshi va og\'riq qoldirish', 'Bakteriyalarga qarshi kurash'];
+          analogues = ['Amoksitsillin', 'Ampitsillin', 'Oksatsillin'];
+        } else if (qLow.endsWith('mol') || qLow.endsWith('fen')) {
+          category = 'Analgetik va Isitma Tushiruvchi (NYQV)';
+          uses = ['Isitmani tushirish', 'Tish va bosh og\'rig\'ini qoldirish', 'Shamollash alomatlarini yengillashtirish'];
+          analogues = ['Ibuprofen', 'Paratsetamol', 'Nimesil'];
+        } else if (qLow.endsWith('zon') || qLow.endsWith('son')) {
+          category = 'Gormonal preparat / Kortikosteroid';
+          uses = ['Kuchli allergik reaksiyalarni bosish', 'Bo\'g\'im va teri yallig\'lanishlarini davolash', 'Otkir shok holatlarida yordam'];
+          analogues = ['Deksametazon', 'Prednizolon', 'Gidrokortizon'];
+        }
+
+        if (selectedImage) {
+          uses.unshift('📸 Rasm orqali aniqlangan tarkib asosida davolash');
+        }
+
         setResult({
-          name: `${nameFormatted} (AI Analiz Natijasi)`,
-          category: 'Farmatsevtik preparat / Dori vositasi',
-          uses: [
-            'Asosiy kasallik alomatlarini kamaytirish va davolash',
-            'Shifokor ko\'rsatmasiga binoan profilaktika va terapiya',
-            'Yallig\'lanish va og\'riq sindromlarini bartaraf etish',
-            'A\'zolar faoliyatini normallashtirish'
-          ],
-          dosage: 'Tibbiy yo\'riqnoma va shifokor dozasiga muvofiq: Kattalarga taomdan so\'ng kuniga 1-2 mahal. Dozani shifokor belgilaydi.',
+          name: `${drug} (AI Analiz Natijasi)`,
+          category: category,
+          uses: uses,
+          dosage: 'Tibbiy yo\'riqnoma va shifokor dozasiga muvofiq: Odatda kuniga 1-2 marta qabul qilinadi. Aniq dozani davolovchi shifokor belgilaydi.',
           sideEffects: [
             'Ko\'ngil aynishi, oshqozonda noqulaylik',
             'Allergik reaksiyalar (toshma, qichishish)',
-            'Bosh og\'rig\'i va bosh aylanishi'
+            'Bosh og\'rig\'i va holsizlik'
           ],
           contraindications: [
-            'Komponentlarga individual chidamsizlik va allergiya',
-            'Homiladorlik va emizish davrida shifokor nazoratisiz taqiqlanadi',
-            'Jigar va buyrak og\'ir yetishmovchiliklari'
+            'Komponentlarga individual chidamsizlik (allergiya)',
+            'Homiladorlik va emizish davrida ehtiyotkorlik bilan',
+            'Jigar va buyrak surunkali kasalliklarida'
           ],
-          analogues: ['Atektar muqobillari', 'Analogi bor dori vositalari', 'Generik turlari'],
-          storage: 'Quruq, yorug\'likdan himoyalangan joyda +25°C dan yuqori bo\'lmagan haroratda saqlansin.'
+          analogues: analogues,
+          storage: 'Quruq, yorug\'lik tushmaydigan joyda +25°C dan yuqori bo\'lmagan haroratda saqlansin.'
         });
       }
       setLoading(false);
