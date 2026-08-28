@@ -58,9 +58,9 @@ const CLINICAL_DRUGS_DB = {
       'Jigar fermentlarining vaqtinchalik oshishi'
     ],
     contraindications: [
-      'Penitsillin va tsefalosporinlarga o\'ta yuqori sezgirlik',
-      'Sariqlik yoki jigar faoliyati buzilishi tarixi',
-       me\'da va ichak infektsiyalarida ehtiyotkorlik'
+      "Penitsillin va tsefalosporinlarga o'ta yuqori sezgirlik",
+      "Sariqlik yoki jigar faoliyati buzilishi tarixi",
+      "Me'da va ichak infektsiyalarida ehtiyotkorlik"
     ],
     analogues: ['Augmentin', 'Flemoklav Solutab', 'Amoxiclav', 'Panklav'],
     storage: '25°C dan past haroratda, bolalar qo\'li yetmaydigan joyda saqlansin.'
