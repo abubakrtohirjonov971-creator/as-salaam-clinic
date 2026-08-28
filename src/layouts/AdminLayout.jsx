@@ -146,7 +146,7 @@ const AdminLayout = () => {
             </span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           </div>
-          <p className="text-xs font-bold text-white mb-2 leading-snug">Dasturchi bilan bog'lanish / Maqtov 🌟</p>
+          <p className="text-xs font-bold text-white mb-2 leading-snug">Dasturchi va Texnik Yordam 🚀</p>
           <button 
             onClick={() => setIsDevModalOpen(true)}
             className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all text-center flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
@@ -310,12 +310,12 @@ const AdminLayout = () => {
 
             {/* Praise / Info Box */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 mb-6 space-y-3">
-              <div className="flex items-center gap-2 text-yellow-400 font-bold text-sm">
-                <MdStar size={18} />
-                <span>Sayt egasidan minnatdorchilik va takliflar!</span>
+              <div className="flex items-center gap-2 text-blue-300 font-bold text-sm">
+                <MdStar size={18} className="text-yellow-400" />
+                <span>Texnik yordam va takliflar</span>
               </div>
               <p className="text-sm text-gray-200 leading-relaxed font-medium">
-                Klinika tizimiga yangiliklar qo'shish, maqtovlar, texnik yordam yoki takliflar uchun yaratuvchining shaxsiy Telegram manziliga bevosita yozishingiz mumkin! 🚀
+                Klinika tizimiga yangiliklar qo'shish, texnik qo'llab-quvvatlash yoki takliflar uchun dasturchining Telegram manziliga bevosita yozishingiz mumkin! 🚀
               </p>
             </div>
 
