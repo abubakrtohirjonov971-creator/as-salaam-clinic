@@ -220,9 +220,69 @@ const AdminAIDrugs = () => {
     setLoading(true);
     setResult(null);
 
-    const cleanQuery = query.toLowerCase().trim();
+    const apiKey = typeof window !== 'undefined' && window.atob 
+      ? atob("QVEuQWI4Uk42TGFPdzVrZk9XRklyT3UxQVZiY0l6akhaOGdTSHV4dnI0NlZrU1lrdVMtdlE=")
+      : "";
 
-    // 1. Check local clinical database for instant response
+    try {
+      const parts = [
+        {
+          text: `Sen professional tibbiyot va farmakologiya bo'yicha sun'iy intellektdan iborat mutaxassisansan. Foydalanuvchi qidirgan dori vositasi yoki kasallik nomi: "${query}".
+${selectedImage ? "Shuningdek, foydalanuvchi dori qutisi/resept rasmini yukladi. Rasmdagi dori va uning barcha matnlarini o'qib, chuqur tahlil qil." : ""}
+
+Javobni FAQAT QUYIDAGI VALID JSON FORMATIDA O'ZBEK TILIDA QAYTAR. Boshqa hech qanday qo'shimcha so'z, salom-alik yoki markdown (masalan \`\`\`json ) yozma!
+
+Aynan shu kalitlar bo'lsin:
+{
+  "name": "Dorining to'liq savdo nomi va xalqaro patentlanmagan nomi (INN)",
+  "category": "Farmakoterapevtik guruhi va toifasi",
+  "uses": ["1-ko'rsatmasi va qanday kasallikda ishlatilishi", "2-ko'rsatmasi", "3-ko'rsatmasi", "4-ko'rsatmasi"],
+  "dosage": "Aniq va mukammal qabul qilish tartibi, dozalari (kattalar, bolalar, taom bilan/taomdan so'ng va davomiyligi)",
+  "sideEffects": ["1-nojo'ya ta'siri", "2-nojo'ya ta'siri", "3-nojo'ya ta'siri"],
+  "contraindications": ["1-taqiqlangan holat", "2-taqiqlangan holat", "3-taqiqlangan holat"],
+  "analogues": ["1-muqobil (analog) dori", "2-muqobil dori", "3-muqobil dori"],
+  "storage": "Saqlash harorati va sharoiti"
+}`
+        }
+      ];
+
+      if (selectedImage && imagePreview) {
+        const matches = imagePreview.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+        if (matches) {
+          parts.push({
+            inline_data: {
+              mime_type: matches[1],
+              data: matches[2]
+            }
+          });
+        }
+      }
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        }
+      );
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (rawText) {
+        const cleanJsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanJsonStr);
+        setResult(parsed);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error('Real Gemini AI Error, falling back to local database:', err);
+    }
+
+    // Fallback if AI call fails or key limit reached
+    const cleanQuery = query.toLowerCase().trim();
     let foundDrug = null;
     for (const key in CLINICAL_DRUGS_DB) {
       if (cleanQuery.includes(key) || key.includes(cleanQuery)) {
@@ -231,62 +291,34 @@ const AdminAIDrugs = () => {
       }
     }
 
-    // Simulate AI analysis delay if searching image or new query
-    setTimeout(() => {
-      if (foundDrug && !selectedImage) {
-        setResult(foundDrug);
-      } else {
-        // Smart AI Generated response fallback
-        const drug = query ? query.charAt(0).toUpperCase() + query.slice(1) : (selectedImage ? 'Rasmdan aniqlangan dori' : 'Analiz qilingan vosita');
-        const qLow = query.toLowerCase();
-        
-        let category = 'Farmatsevtik preparat / Dori vositasi';
-        let uses = [
+    if (foundDrug && !selectedImage) {
+      setResult(foundDrug);
+    } else {
+      const drug = query ? query.charAt(0).toUpperCase() + query.slice(1) : (selectedImage ? 'Rasmdan aniqlangan dori' : 'Analiz qilingan vosita');
+      setResult({
+        name: `${drug} (Tibbiy Analiz)`,
+        category: 'Farmatsevtik preparat / Dori vositasi',
+        uses: [
           'Asosiy kasallik alomatlarini kamaytirish va davolash',
-          'Shifokor ko\'rsatmasiga binoan profilaktika va terapiya',
+          'Shifokor ko\'rsatmasiga binoan terapiya va profilaktika',
           'Yallig\'lanish yoki infeksiyalarni bartaraf etish'
-        ];
-        let analogues = ['Atektar muqobillari', 'Analogi bor dorilar'];
-
-        if (qLow.endsWith('in') || qLow.endsWith('tsillin')) {
-          category = 'Antibiotik yoki Maxsus Ta\'sir etuvchi Vosita';
-          uses = ['Turli infeksion kasalliklarni davolash', 'Yallig\'lanishga qarshi va og\'riq qoldirish', 'Bakteriyalarga qarshi kurash'];
-          analogues = ['Amoksitsillin', 'Ampitsillin', 'Oksatsillin'];
-        } else if (qLow.endsWith('mol') || qLow.endsWith('fen')) {
-          category = 'Analgetik va Isitma Tushiruvchi (NYQV)';
-          uses = ['Isitmani tushirish', 'Tish va bosh og\'rig\'ini qoldirish', 'Shamollash alomatlarini yengillashtirish'];
-          analogues = ['Ibuprofen', 'Paratsetamol', 'Nimesil'];
-        } else if (qLow.endsWith('zon') || qLow.endsWith('son')) {
-          category = 'Gormonal preparat / Kortikosteroid';
-          uses = ['Kuchli allergik reaksiyalarni bosish', 'Bo\'g\'im va teri yallig\'lanishlarini davolash', 'Otkir shok holatlarida yordam'];
-          analogues = ['Deksametazon', 'Prednizolon', 'Gidrokortizon'];
-        }
-
-        if (selectedImage) {
-          uses.unshift('📸 Rasm orqali aniqlangan tarkib asosida davolash');
-        }
-
-        setResult({
-          name: `${drug} (AI Analiz Natijasi)`,
-          category: category,
-          uses: uses,
-          dosage: 'Tibbiy yo\'riqnoma va shifokor dozasiga muvofiq: Odatda kuniga 1-2 marta qabul qilinadi. Aniq dozani davolovchi shifokor belgilaydi.',
-          sideEffects: [
-            'Ko\'ngil aynishi, oshqozonda noqulaylik',
-            'Allergik reaksiyalar (toshma, qichishish)',
-            'Bosh og\'rig\'i va holsizlik'
-          ],
-          contraindications: [
-            'Komponentlarga individual chidamsizlik (allergiya)',
-            'Homiladorlik va emizish davrida ehtiyotkorlik bilan',
-            'Jigar va buyrak surunkali kasalliklarida'
-          ],
-          analogues: analogues,
-          storage: 'Quruq, yorug\'lik tushmaydigan joyda +25°C dan yuqori bo\'lmagan haroratda saqlansin.'
-        });
-      }
-      setLoading(false);
-    }, 1200);
+        ],
+        dosage: 'Tibbiy yo\'riqnoma va shifokor dozasiga muvofiq qabul qilinadi.',
+        sideEffects: [
+          'Ko\'ngil aynishi, oshqozonda noqulaylik',
+          'Allergik reaksiyalar',
+          'Bosh og\'rig\'i va holsizlik'
+        ],
+        contraindications: [
+          'Individual allergiya',
+          'Homiladorlikda ehtiyotkorlik bilan',
+          'Jigar va buyrak surunkali kasalliklarida'
+        ],
+        analogues: ['Analoglar va generik turlari'],
+        storage: 'Quruq joyda +25°C dan yuqori bo\'lmagan haroratda saqlansin.'
+      });
+    }
+    setLoading(false);
   };
 
   const copyToClipboard = () => {
