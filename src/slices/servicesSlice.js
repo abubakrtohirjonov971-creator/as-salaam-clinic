@@ -3,6 +3,39 @@ import { supabase } from '../lib/supabase';
 
 const fallbackServices = [
   {
+    id: 'travmatologiya',
+    title: 'Travmatologiya',
+    title_ru: 'Травматология',
+    desc: 'Suyak va bo\'g\'im jarohatlarini davolash va tiklash.',
+    desc_ru: 'Лечение и восстановление травм костей и суставов.',
+    description: 'Suyak va bo\'g\'im jarohatlarini davolash va tiklash.',
+    description_ru: 'Лечение и восстановление травм костей и суставов.',
+    icon: 'FaUserMd',
+    image: '/services/travmatologiya.jpg'
+  },
+  {
+    id: 'ekg',
+    title: 'EKG',
+    title_ru: 'ЭКГ',
+    desc: 'Yurak faoliyatini elektrokardiografiya orqali tekshirish.',
+    desc_ru: 'Обследование сердечной деятельности с помощью электрокардиографии.',
+    description: 'Yurak faoliyatini elektrokardiografiya orqali tekshirish.',
+    description_ru: 'Обследование сердечной деятельности с помощью электрокардиографии.',
+    icon: 'FaHeartbeat',
+    image: '/services/ekg.jpg'
+  },
+  {
+    id: 'ortoped',
+    title: 'Ortoped-Vertebrolog',
+    title_ru: 'Ортопед-Вертебролог',
+    desc: 'Umurtqa va bo\'g\'im kasalliklarini kompleks davolash.',
+    desc_ru: 'Комплексное лечение заболеваний позвоночника и суставов.',
+    description: 'Umurtqa va bo\'g\'im kasalliklarini kompleks davolash.',
+    description_ru: 'Комплексное лечение заболеваний позвоночника и суставов.',
+    icon: 'FaUserMd',
+    image: '/services/ortoped.jpg'
+  },
+  {
     id: 'fizioterapiya',
     title: 'Fizioterapiya',
     title_ru: 'Физиотерапия',
@@ -23,17 +56,6 @@ const fallbackServices = [
     description_ru: 'Обследование всех органов на высокоточных аппаратах УЗИ.',
     icon: 'FaStethoscope',
     image: '/services/Uzi.jpg'
-  },
-  {
-    id: 'ekg',
-    title: 'EKG',
-    title_ru: 'ЭКГ',
-    desc: 'Yurak faoliyatini elektrokardiografiya orqali tekshirish.',
-    desc_ru: 'Обследование сердечной деятельности с помощью электрокардиографии.',
-    description: 'Yurak faoliyatini elektrokardiografiya orqali tekshirish.',
-    description_ru: 'Обследование сердечной деятельности с помощью электрокардиографии.',
-    icon: 'FaHeartbeat',
-    image: '/services/ekg.jpg'
   },
   {
     id: 'nevropatolog',
@@ -60,35 +82,13 @@ const fallbackServices = [
   {
     id: 'pediatr',
     title: 'Pediatr',
-    title_ru: 'Педиатр',
+    title_ru: 'Пediатр',
     desc: 'Bolalar salomatligini saqlash va kasalliklarni davolash.',
     desc_ru: 'Сохранение здоровья детей и лечение заболеваний.',
     description: 'Bolalar salomatligini saqlash va kasalliklarni davolash.',
     description_ru: 'Сохранение здоровья детей и лечение заболеваний.',
     icon: 'FaChild',
     image: '/services/pediatr.png'
-  },
-  {
-    id: 'ortoped',
-    title: 'Ortoped-Vertebrolog',
-    title_ru: 'Ортопед-Вертебролог',
-    desc: 'Umurtqa va bo\'g\'im kasalliklarini kompleks davolash.',
-    desc_ru: 'Комплексное лечение заболеваний позвоночника и суставов.',
-    description: 'Umurtqa va bo\'g\'im kasalliklarini kompleks davolash.',
-    description_ru: 'Комплексное лечение заболеваний позвоночника и суставов.',
-    icon: 'FaUserMd',
-    image: '/services/ortoped.jpg'
-  },
-  {
-    id: 'travmatologiya',
-    title: 'Travmatologiya',
-    title_ru: 'Травматология',
-    desc: 'Suyak va bo\'g\'im jarohatlarini davolash va tiklash.',
-    desc_ru: 'Лечение и восстановление травм костей и суставов.',
-    description: 'Suyak va bo\'g\'im jarohatlarini davolash va tiklash.',
-    description_ru: 'Лечение и восстановление травм костей и суставов.',
-    icon: 'FaUserMd',
-    image: '/services/travmatologiya.jpg'
   },
   {
     id: 'laboratoriya',
@@ -103,6 +103,18 @@ const fallbackServices = [
   }
 ];
 
+const priorityOrder = ['travmatologiya', 'ekg', 'ortoped', 'fizioterapiya', 'uzi', 'nevropatolog', 'terapevt', 'pediatr', 'laboratoriya'];
+
+const sortServices = (list) => {
+  return [...list].sort((a, b) => {
+    const indexA = priorityOrder.indexOf(a.id);
+    const indexB = priorityOrder.indexOf(b.id);
+    const rankA = indexA !== -1 ? indexA : 99;
+    const rankB = indexB !== -1 ? indexB : 99;
+    return rankA - rankB;
+  });
+};
+
 // Fetch services from Supabase
 export const fetchServices = createAsyncThunk(
   'services/fetchServices',
@@ -111,13 +123,13 @@ export const fetchServices = createAsyncThunk(
       const { data, error } = await supabase.from('services').select('*').order('created_at', { ascending: false });
       if (error || !data || data.length === 0) return fallbackServices;
 
-      // Ensure all 6 services are always displayed by merging missing fallback items
+      let combined = data;
       if (data.length < fallbackServices.length) {
         const existingIds = new Set(data.map(item => item.id || item.title?.toLowerCase()));
         const missing = fallbackServices.filter(item => !existingIds.has(item.id));
-        return [...data, ...missing];
+        combined = [...data, ...missing];
       }
-      return data;
+      return sortServices(combined);
     } catch (err) {
       console.warn("Supabase xatoligi (Services). Zaxira malumotlar ishlatilmoqda.");
       return fallbackServices;
