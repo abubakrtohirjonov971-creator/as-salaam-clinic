@@ -181,9 +181,9 @@ const AdminRooms = () => {
   };
 
   const filteredRooms = rooms.filter(r => {
-    const matchesSearch = r.number.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          r.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (r.patient && r.patient.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = (r.number || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (r.type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (r.patient || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     if (!matchesSearch) return false;
 
