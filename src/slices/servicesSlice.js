@@ -99,7 +99,7 @@ const fallbackServices = [
     description: 'Qon, siydik va biokimyoviy tahlillarni tezkor va aniq o\'tkazish.',
     description_ru: 'Быстрые и точные анализы крови, мочи и биохимии.',
     icon: 'FaVial',
-    image: '/services/Fizioterapiya.jpeg'
+    image: '/services/laboratoriya.jpeg'
   }
 ];
 
