@@ -67,6 +67,39 @@ const fallbackServices = [
     description_ru: 'Сохранение здоровья детей и лечение заболеваний.',
     icon: 'FaChild',
     image: '/services/pediatr.png'
+  },
+  {
+    id: 'ortoped',
+    title: 'Ortoped-Vertebrolog',
+    title_ru: 'Ортопед-Вертебролог',
+    desc: 'Umurtqa va bo\'g\'im kasalliklarini kompleks davolash.',
+    desc_ru: 'Комплексное лечение заболеваний позвоночника и суставов.',
+    description: 'Umurtqa va bo\'g\'im kasalliklarini kompleks davolash.',
+    description_ru: 'Комплексное лечение заболеваний позвоночника и суставов.',
+    icon: 'FaUserMd',
+    image: '/services/ortoped.jpg'
+  },
+  {
+    id: 'travmatologiya',
+    title: 'Travmatologiya',
+    title_ru: 'Травматология',
+    desc: 'Suyak va bo\'g\'im jarohatlarini davolash va tiklash.',
+    desc_ru: 'Лечение и восстановление травм костей и суставов.',
+    description: 'Suyak va bo\'g\'im jarohatlarini davolash va tiklash.',
+    description_ru: 'Лечение и восстановление травм костей и суставов.',
+    icon: 'FaUserMd',
+    image: '/services/travmatologiya.jpg'
+  },
+  {
+    id: 'laboratoriya',
+    title: 'Laboratoriya tahlillari',
+    title_ru: 'Лабораторные анализы',
+    desc: 'Qon, siydik va biokimyoviy tahlillarni tezkor va aniq o\'tkazish.',
+    desc_ru: 'Быстрые и точные анализы крови, мочи и биохимии.',
+    description: 'Qon, siydik va biokimyoviy tahlillarni tezkor va aniq o\'tkazish.',
+    description_ru: 'Быстрые и точные анализы крови, мочи и биохимии.',
+    icon: 'FaVial',
+    image: '/services/Fizioterapiya.jpeg'
   }
 ];
 
