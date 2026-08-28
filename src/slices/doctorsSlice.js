@@ -6,9 +6,11 @@ const fallbackDoctors = [
     id: 'erkinbek',
     name: 'Haydarov Erkinbek',
     specialty: 'Neyroxirurg',
+    specialty_ru: 'Нейрохирург',
     experience: '15+ yil',
-    image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=400&q=80',
+    image: '/doctors/erkinbek.png',
     about: 'Miya va asab tizimi bo‘yicha tajribali neyroxirurg.',
+    about_ru: 'Опытный нейрохирург по заболеваниям мозга и нервной системы.',
     methods: ['Neyroxirurgik operatsiyalar', 'Ortoped', 'MRT tahlil'],
     diseases: ['Miya kasalliklari', 'Umurtqa muammolari', 'Nevrologik holatlar']
   },
@@ -16,9 +18,11 @@ const fallbackDoctors = [
     id: 'ibrohimjon',
     name: 'Ismoiljonov Ibrohimjon',
     specialty: 'Xirurg',
+    specialty_ru: 'Хирург',
     experience: '2+ yil',
-    image: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=400&q=80',
+    image: '/doctors/ibrohimjon.png',
     about: 'Murakkab jarrohlik amaliyotlari bo‘yicha mutaxassis.',
+    about_ru: 'Специалист по сложным хирургическим операциям.',
     methods: ['Operatsiyalar', 'Diagnostika', 'Jarrohlik nazorati'],
     diseases: ['Ichki organlar', 'Jarrohlik patologiyalari']
   },
@@ -26,9 +30,11 @@ const fallbackDoctors = [
     id: 'abror',
     name: 'Davlatov Abror',
     specialty: 'Vertebrolog',
+    specialty_ru: 'Вертебролог',
     experience: '3+ yil',
-    image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80',
+    image: '/doctors/abror.png',
     about: 'Umurtqa va bel og‘rig‘i davolash bo‘yicha mutaxassis.',
+    about_ru: 'Специалист по лечению позвоночника и болей в спине.',
     methods: ['Manual terapiya', 'Reabilitatsiya', 'Vertebrologiya'],
     diseases: ['Osteoxondroz', 'Skolioz', 'Bel og‘rig‘i']
   }

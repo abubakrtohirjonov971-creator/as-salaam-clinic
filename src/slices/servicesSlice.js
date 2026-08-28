@@ -3,28 +3,70 @@ import { supabase } from '../lib/supabase';
 
 const fallbackServices = [
   {
-    id: '1',
+    id: 'fizioterapiya',
     title: 'Fizioterapiya',
     title_ru: 'Физиотерапия',
+    desc: 'Zamonaviy usullar yordamida harakat tizimi kasalliklarini davolash.',
+    desc_ru: 'Лечение заболеваний опорно-двигательного аппарата современными методами.',
     description: 'Zamonaviy usullar yordamida harakat tizimi kasalliklarini davolash.',
     description_ru: 'Лечение заболеваний опорно-двигательного аппарата современными методами.',
-    icon: 'FaHeartbeat'
+    icon: 'FaHeartbeat',
+    image: '/services/Fizioterapiya.jpeg'
   },
   {
-    id: '2',
+    id: 'uzi',
     title: 'UZI diagnostika',
     title_ru: 'УЗИ диагностика',
+    desc: 'Barcha a\'zolarni yuqori aniqlikdagi UZI apparatlarida tekshirish.',
+    desc_ru: 'Обследование всех органов на высокоточных аппаратах УЗИ.',
     description: 'Barcha a\'zolarni yuqori aniqlikdagi UZI apparatlarida tekshirish.',
     description_ru: 'Обследование всех органов на высокоточных аппаратах УЗИ.',
-    icon: 'FaStethoscope'
+    icon: 'FaStethoscope',
+    image: '/services/Uzi.jpg'
   },
   {
-    id: '3',
-    title: 'Kardiologiya',
-    title_ru: 'Кардиология',
-    description: 'Yurak qon-tomir kasalliklarini aniqlash va samarali davolash.',
-    description_ru: 'Выявление и эффективное лечение сердечно-сосудистых заболеваний.',
-    icon: 'FaHeartbeat'
+    id: 'ekg',
+    title: 'EKG',
+    title_ru: 'ЭКГ',
+    desc: 'Yurak faoliyatini elektrokardiografiya orqali tekshirish.',
+    desc_ru: 'Обследование сердечной деятельности с помощью электрокардиографии.',
+    description: 'Yurak faoliyatini elektrokardiografiya orqali tekshirish.',
+    description_ru: 'Обследование сердечной деятельности с помощью электрокардиографии.',
+    icon: 'FaHeartbeat',
+    image: '/services/ekg.jpg'
+  },
+  {
+    id: 'nevropatolog',
+    title: 'Nevropatolog',
+    title_ru: 'Невропатолог',
+    desc: 'Asab tizimi kasalliklarini aniqlash va davolash.',
+    desc_ru: 'Диагностика и лечение заболеваний нервной системы.',
+    description: 'Asab tizimi kasalliklarini aniqlash va davolash.',
+    description_ru: 'Диагностика и лечение заболеваний нервной системы.',
+    icon: 'FaBrain',
+    image: '/services/nevropatolog.png'
+  },
+  {
+    id: 'terapevt',
+    title: 'Terapevt',
+    title_ru: 'Терапевт',
+    desc: 'Umumiy tibbiy ko\'rik va ichki kasalliklarni davolash.',
+    desc_ru: 'Общий медицинский осмотр и лечение внутренних заболеваний.',
+    description: 'Umumiy tibbiy ko\'rik va ichki kasalliklarni davolash.',
+    description_ru: 'Общий медицинский осмотр и лечение внутренних заболеваний.',
+    icon: 'FaStethoscope',
+    image: '/services/terapevt.png'
+  },
+  {
+    id: 'pediatr',
+    title: 'Pediatr',
+    title_ru: 'Педиатр',
+    desc: 'Bolalar salomatligini saqlash va kasalliklarni davolash.',
+    desc_ru: 'Сохранение здоровья детей и лечение заболеваний.',
+    description: 'Bolalar salomatligini saqlash va kasalliklarni davolash.',
+    description_ru: 'Сохранение здоровья детей и лечение заболеваний.',
+    icon: 'FaChild',
+    image: '/services/pediatr.png'
   }
 ];
 
