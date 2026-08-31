@@ -209,7 +209,7 @@ const Booking = () => {
     try {
       // 1. Telegram ga yuborish (bir nechta adminlarga bir vaqtning o'zida)
       const BOT_TOKEN = '8121379847:AAHKoY9Nj1HzPSOx4hIbV1CF6kYhnY91WSU';
-      const CLINIC_CHAT_IDS = ['8054469979']; // Yangi adminlarning Telegram Chat ID lari
+      const CLINIC_CHAT_IDS = ['6497060879']; // Adminlarning Telegram Chat ID lari
       const dateFormatted = new Date(selectedDate).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
       const msg =
         `🔔 *YANGI QABULGA YOZILISH!*\n\n` +
