@@ -207,9 +207,9 @@ const Booking = () => {
     const initials = formData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
     try {
-      // 1. Telegram ga yuborish (birinchi navbatda, chunki baza ishlamay qolgan bo'lishi mumkin)
+      // 1. Telegram ga yuborish (bir nechta adminlarga bir vaqtning o'zida)
       const BOT_TOKEN = '8121379847:AAHKoY9Nj1HzPSOx4hIbV1CF6kYhnY91WSU';
-      const CLINIC_CHAT_ID = '8054469979';
+      const CLINIC_CHAT_IDS = ['8054469979']; // Yangi adminlarning Telegram Chat ID lari
       const dateFormatted = new Date(selectedDate).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
       const msg =
         `🔔 *YANGI QABULGA YOZILISH!*\n\n` +
@@ -220,11 +220,15 @@ const Booking = () => {
         `⏰ Vaqt: *${selectedTime}*\n\n` +
         `🏥 _As-salaam Clinic Navbat Tizimi_`;
         
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: CLINIC_CHAT_ID, text: msg, parse_mode: 'Markdown' }),
-      }).catch(console.error);
+      await Promise.all(
+        CLINIC_CHAT_IDS.map(chat_id =>
+          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id, text: msg, parse_mode: 'Markdown' }),
+          }).catch(console.error)
+        )
+      );
 
       // 2. Supabase ga yozishga urinib ko'rish (xatolik bersa ham formani to'xtatmaydi)
       try {

@@ -46,9 +46,9 @@ const BookingForm = ({ serviceId, doctorId, className = "" }) => {
 
       if (error) throw error;
 
-      // Send telegram notification to clinic group chat
+      // Send telegram notification to clinic group chat or multiple admins
       const BOT_TOKEN = '8121379847:AAHKoY9Nj1HzPSOx4hIbV1CF6kYhnY91WSU';
-      const CLINIC_CHAT_ID = '8054469979';
+      const CLINIC_CHAT_IDS = ['8054469979']; // Yangi adminlarning Telegram Chat ID lari
       
       const newBookingText = 
         `🔔 *YANGI QABULGA YOZILISH (Xizmat sahifasidan)!*\n\n` +
@@ -57,15 +57,19 @@ const BookingForm = ({ serviceId, doctorId, className = "" }) => {
         `📝 Xabar: ${formData.message || "Yo'q"}\n\n` +
         `🏥 _As-salaam Clinic Navbat Tizimi_`;
 
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: CLINIC_CHAT_ID,
-          text: newBookingText,
-          parse_mode: 'Markdown'
-        })
-      }).catch(err => console.error('Telegram error:', err));
+      await Promise.all(
+        CLINIC_CHAT_IDS.map(chat_id =>
+          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id,
+              text: newBookingText,
+              parse_mode: 'Markdown'
+            })
+          }).catch(err => console.error('Telegram error:', err))
+        )
+      );
 
       setIsSubmitted(true);
     } catch (err) {
