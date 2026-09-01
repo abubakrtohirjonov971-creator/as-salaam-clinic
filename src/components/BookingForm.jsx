@@ -48,7 +48,7 @@ const BookingForm = ({ serviceId, doctorId, className = "" }) => {
 
       // Send telegram notification to clinic group chat or multiple admins
       const BOT_TOKEN = '8121379847:AAHKoY9Nj1HzPSOx4hIbV1CF6kYhnY91WSU';
-      const CLINIC_CHAT_IDS = ['6497060879']; // Adminlarning Telegram Chat ID lari
+      const CLINIC_CHAT_IDS = ['6497060879', '6159796958']; // Adminlarning Telegram Chat ID lari
       
       const newBookingText = 
         `🔔 *YANGI QABULGA YOZILISH (Xizmat sahifasidan)!*\n\n` +
