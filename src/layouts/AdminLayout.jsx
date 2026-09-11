@@ -18,7 +18,8 @@ import {
   MdAccountBalanceWallet,
   MdCode,
   MdStar,
-  MdAutoAwesome
+  MdAutoAwesome,
+  MdMedication
 } from 'react-icons/md';
 import { FaTelegram } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
@@ -90,6 +91,7 @@ const AdminLayout = () => {
     { name: 'Kassa', icon: <MdAccountBalanceWallet size={22} />, path: '/admin/finance' },
     { name: 'Davolash', icon: <MdHealing size={22} />, path: '/admin/treatments' },
     { name: 'Tahlillar', icon: <MdScience size={22} />, path: '/admin/labs' },
+    { name: 'Dorilar', icon: <MdMedication size={22} />, path: '/admin/pharmacy' },
     { name: 'Sozlamalar', icon: <MdSettings size={22} />, path: '/admin/settings' },
   ];
 

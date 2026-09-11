@@ -31,6 +31,7 @@ const AdminTreatments = lazy(() => import('./pages/admin/AdminTreatments'));
 const AdminLabs = lazy(() => import('./pages/admin/AdminLabs'));
 const AdminFinance = lazy(() => import('./pages/admin/AdminFinance'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminPharmacy = lazy(() => import('./pages/admin/AdminPharmacy'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 
 // Fast inline spinner for page transitions
@@ -99,6 +100,7 @@ function App() {
               <Route path="treatments" element={<AdminTreatments />} />
               <Route path="labs" element={<AdminLabs />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="pharmacy" element={<AdminPharmacy />} />
             </Route>
           </Route>
 
