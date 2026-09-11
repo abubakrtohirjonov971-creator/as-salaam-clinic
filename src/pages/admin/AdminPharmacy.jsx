@@ -141,7 +141,7 @@ const DEFAULT_DORILAR = [
   { id: 128, nom: 'Фуросемид амп 2мл №10',                    narx: 1820,   stock: 140, category: 'Diuretik' },
   { id: 129, nom: 'Церуглан',                                  narx: 672,    stock: 160, category: 'Ampula' },
   { id: 130, nom: 'Цефазолин пор. д/пр. р-ра д/ин. 1г №50',   narx: 8904,   stock: 120, category: 'Antibiotik' },
-  { id: 131, nom: 'Цефаперазол сульбактам (Никазон-с)',        narx: 22960,  stock: 65,  category: 'Antibiotik' },
+  { id: 131, nom: 'Цефаперазол сульбакtam (Никазон-с)',        narx: 22960,  stock: 65,  category: 'Antibiotik' },
   { id: 132, nom: 'Цефтриаксон пор. 1г №50',                  narx: 6650,   stock: 130, category: 'Antibiotik' },
   { id: 133, nom: 'Цитиколин Ромфарм р-р. д/ин 1000мг/4мл №5', narx: 47600,  stock: 45,  category: 'Nootrop' },
   { id: 134, nom: 'Цитофлавин',                               narx: 37100,  stock: 55,  category: 'Flakon', highlight: 'red' },
@@ -161,9 +161,9 @@ const fmt = (n) => (Math.round(n || 0)).toLocaleString('uz-UZ');
 const todayStr = () => new Date().toISOString().split('T')[0];
 
 export default function AdminPharmacy() {
-  // Asosiy ko'rinish: 'calculator' (Excel jadvali) yoki 'history' (Sotilgan/Ishlatilgan dorilar tarixi)
   const [activeMainView, setActiveMainView] = useState('calculator');
-  const [historySubTab, setHistorySubTab] = useState('receipts'); // 'receipts' (Cheklar) | 'usage' (Sarflangan dorilar hisoboti)
+  const [historySubTab, setHistorySubTab] = useState('receipts');
+  const [toastMessage, setToastMessage] = useState(null);
 
   const [dorilar, setDorilar] = useState(() => {
     try {
@@ -174,7 +174,6 @@ export default function AdminPharmacy() {
     }
   });
 
-  // Sotuvlar / Cheklar tarixi
   const [historyReceipts, setHistoryReceipts] = useState(() => {
     try {
       const saved = localStorage.getItem('assalam_pharmacy_history');
@@ -202,10 +201,8 @@ export default function AdminPharmacy() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [receiptForPrint, setReceiptForPrint] = useState(null);
   
-  // Tahrirlash modali
   const [editingDrug, setEditingDrug] = useState(null);
 
-  // Yangi dori qo'shish formasi
   const [newDrug, setNewDrug] = useState({
     nom: '',
     narx: '',
@@ -224,10 +221,14 @@ export default function AdminPharmacy() {
     localStorage.setItem('assalam_pharmacy_history', JSON.stringify(historyReceipts));
   }, [historyReceipts]);
 
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   const currentSheet = sheetData[activeSheet] || { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 };
   const currentQuantities = currentSheet.quantities;
 
-  // Soni o'zgarganda
   const handleQuantityChange = (id, val) => {
     const num = val === '' ? 0 : Math.max(0, parseInt(val) || 0);
     setSheetData(prev => ({
@@ -262,7 +263,6 @@ export default function AdminPharmacy() {
     }));
   };
 
-  // Yangi dori qo'shish
   const handleAddDrug = (e) => {
     e.preventDefault();
     if (!newDrug.nom.trim() || !newDrug.narx) return;
@@ -280,9 +280,9 @@ export default function AdminPharmacy() {
     setDorilar([added, ...dorilar]);
     setNewDrug({ nom: '', narx: '', stock: 50, category: 'Ampula', highlight: 'none' });
     setIsAddModalOpen(false);
+    showToast(`"${added.nom}" dorisi bazaga qo'shildi!`);
   };
 
-  // Dorini tahrirlashni saqlash
   const handleUpdateDrug = (e) => {
     e.preventDefault();
     if (!editingDrug || !editingDrug.nom.trim() || !editingDrug.narx) return;
@@ -302,17 +302,17 @@ export default function AdminPharmacy() {
     }));
 
     setEditingDrug(null);
+    showToast(`Dori ma'lumotlari yangilandi!`);
   };
 
-  // Dorini o'chirish
   const handleDeleteDrug = (id, nom) => {
     if (window.confirm(`Haqiqatdan ham "${nom}" dorisini bazadan o'chirmoqchimisiz?`)) {
       setDorilar(prev => prev.filter(d => d.id !== id));
       if (editingDrug?.id === id) setEditingDrug(null);
+      showToast(`Dori bazadan o'chirildi!`);
     }
   };
 
-  // Varaq qo'shish
   const addNewSheet = () => {
     const nextNum = sheets.length + 1;
     const newName = `Лист${nextNum}`;
@@ -324,7 +324,6 @@ export default function AdminPharmacy() {
     setActiveSheet(newName);
   };
 
-  // Enter/ArrowDown bilan navigatsiya
   const handleKeyDown = (e, index) => {
     if (e.key === 'Enter' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -343,13 +342,11 @@ export default function AdminPharmacy() {
     }
   };
 
-  // Kategoriyalar
   const categories = useMemo(() => {
     const list = new Set(dorilar.map(d => d.category || 'Boshqa'));
     return ['Barchasi', ...Array.from(list)];
   }, [dorilar]);
 
-  // Hisob-kitoblar (To'g'ri va aniq formula)
   const dorilarJami = useMemo(() => {
     return dorilar.reduce((sum, dori) => {
       const qty = currentQuantities[dori.id] || 0;
@@ -361,11 +358,9 @@ export default function AdminPharmacy() {
   const grandTotal = dorilarJami + yotoqJami;
   const tulanganSumma = currentSheet.tuladi || 0;
 
-  // Qarz yoki Qaytim hisobi
   const qarz = Math.max(0, grandTotal - tulanganSumma);
   const qaytim = Math.max(0, tulanganSumma - grandTotal);
 
-  // Tanlangan dorilar (sostav)
   const selectedDorilarList = useMemo(() => {
     return dorilar
       .filter(d => (currentQuantities[d.id] || 0) > 0)
@@ -377,8 +372,8 @@ export default function AdminPharmacy() {
       }));
   }, [dorilar, currentQuantities]);
 
-  // Chekni tasdiqlash va Tarixga saqlash
-  const handleSaveToHistory = () => {
+  // ASOSIY SAQLASH VA CHEK CHIQARISH FUNKSIYASI (Har safar Tarixga to'liq yozadi)
+  const saveAndPrintReceipt = (shouldPrintDirectly = false) => {
     if (selectedDorilarList.length === 0 && (currentSheet.yotoqKun || 0) === 0) {
       alert("Iltimos, avval dori yoki yotoq belgilang!");
       return;
@@ -392,7 +387,7 @@ export default function AdminPharmacy() {
       sana: currentSheet.sana || todayStr(),
       time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
       bemor: currentSheet.bemor || 'Noma\'lum bemor',
-      items: selectedDorilarList,
+      items: [...selectedDorilarList],
       dorilarJami,
       yotoqKun: currentSheet.yotoqKun || 0,
       yotoqJami,
@@ -414,9 +409,12 @@ export default function AdminPharmacy() {
       return d;
     }));
 
-    setHistoryReceipts([newReceipt, ...historyReceipts]);
+    // Tarixga qo'shish
+    const updatedHistory = [newReceipt, ...historyReceipts];
+    setHistoryReceipts(updatedHistory);
+    localStorage.setItem('assalam_pharmacy_history', JSON.stringify(updatedHistory));
 
-    // Hozirgi varaqni tozalash
+    // Formani tozalash
     setSheetData(prev => ({
       ...prev,
       [activeSheet]: { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 }
@@ -424,9 +422,13 @@ export default function AdminPharmacy() {
 
     setReceiptForPrint(newReceipt);
     setIsReceiptModalOpen(true);
+    showToast(`Chek #${receiptNumber} muvaffaqiyatli saqlandi va Tarixga yozildi! 🎉`);
+
+    if (shouldPrintDirectly) {
+      setTimeout(() => window.print(), 300);
+    }
   };
 
-  // Qidiruv va filtr
   const filteredDorilar = useMemo(() => {
     return dorilar.filter(dori => {
       const matchesSearch = dori.nom.toLowerCase().includes(search.toLowerCase()) || dori.id.toString() === search;
@@ -438,8 +440,6 @@ export default function AdminPharmacy() {
     });
   }, [dorilar, search, selectedCategory, onlySelected, currentQuantities]);
 
-  // TARIX HISOBLARI:
-  // 1. Filtrlangan cheklar
   const filteredHistory = useMemo(() => {
     return historyReceipts.filter(rc => {
       const matchSearch = rc.bemor.toLowerCase().includes(historySearch.toLowerCase()) || 
@@ -449,11 +449,10 @@ export default function AdminPharmacy() {
     });
   }, [historyReceipts, historySearch, historyDateFilter]);
 
-  // 2. Faqat ishlatilgan/sotilgan dorilarning umumiy xulosasi (Aggregated usage)
   const aggregatedUsedDrugs = useMemo(() => {
     const map = {};
     filteredHistory.forEach(receipt => {
-      receipt.items.forEach(item => {
+      receipt.items?.forEach(item => {
         if (!map[item.id]) {
           map[item.id] = {
             id: item.id,
@@ -473,24 +472,32 @@ export default function AdminPharmacy() {
   }, [filteredHistory]);
 
   const totalHistoryRevenue = useMemo(() => {
-    return filteredHistory.reduce((s, r) => s + r.grandTotal, 0);
+    return filteredHistory.reduce((s, r) => s + (r.grandTotal || 0), 0);
   }, [filteredHistory]);
 
   const totalHistoryDrugsSum = useMemo(() => {
-    return filteredHistory.reduce((s, r) => s + r.dorilarJami, 0);
+    return filteredHistory.reduce((s, r) => s + (r.dorilarJami || 0), 0);
   }, [filteredHistory]);
 
   const totalHistoryBedSum = useMemo(() => {
-    return filteredHistory.reduce((s, r) => s + r.yotoqJami, 0);
+    return filteredHistory.reduce((s, r) => s + (r.yotoqJami || 0), 0);
   }, [filteredHistory]);
 
   const totalHistoryDebt = useMemo(() => {
-    return filteredHistory.reduce((s, r) => s + r.qarz, 0);
+    return filteredHistory.reduce((s, r) => s + (r.qarz || 0), 0);
   }, [filteredHistory]);
 
   return (
-    <div className="p-4 md:p-6 bg-[#F8FAFC] min-h-screen font-sans text-slate-800">
+    <div className="p-4 md:p-6 bg-[#F8FAFC] min-h-screen font-sans text-slate-800 relative">
       
+      {/* ── TOAST NOTIFICATION ────────────────────────────────────────── */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-500/30 animate-in fade-in slide-in-from-top-4 duration-200">
+          <MdCheckCircle className="text-emerald-400" size={22} />
+          <span className="text-xs font-bold">{toastMessage}</span>
+        </div>
+      )}
+
       {/* ── TOP NAVIGATION SWITCH: [ KALKULYATOR ] vs [ TARIX OYNASI ] ───── */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
@@ -516,22 +523,20 @@ export default function AdminPharmacy() {
           >
             <FaHistory className={activeMainView === 'history' ? 'text-white' : 'text-emerald-600'} size={14} />
             <span>Sotilgan & Ishlatilgan Dorilar Tarixi</span>
-            {historyReceipts.length > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
-                activeMainView === 'history' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
-              }`}>
-                {historyReceipts.length}
-              </span>
-            )}
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+              activeMainView === 'history' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+            }`}>
+              {historyReceipts.length} ta chek
+            </span>
           </button>
         </div>
 
         {activeMainView === 'calculator' && (
           <div className="flex items-center gap-2">
             <button
-              onClick={handleSaveToHistory}
+              onClick={() => saveAndPrintReceipt(false)}
               disabled={selectedDorilarList.length === 0 && (currentSheet.yotoqKun || 0) === 0}
-              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95"
             >
               <FaCheckDouble size={14} /> Chekni Saqlash & Tarixga Yozish
             </button>
@@ -602,24 +607,10 @@ export default function AdminPharmacy() {
                 </p>
               </div>
               <button 
-                onClick={() => {
-                  setReceiptForPrint({
-                    receiptNumber: 'PREVIEW-' + Math.floor(1000 + Math.random() * 9000),
-                    sana: currentSheet.sana,
-                    bemor: currentSheet.bemor,
-                    items: selectedDorilarList,
-                    dorilarJami,
-                    yotoqKun: currentSheet.yotoqKun,
-                    yotoqJami,
-                    grandTotal,
-                    tuladi: tulanganSumma,
-                    qarz,
-                    qaytim
-                  });
-                  setIsReceiptModalOpen(true);
-                }}
-                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all shadow"
-                title="Chek ko'rish"
+                onClick={() => saveAndPrintReceipt(false)}
+                disabled={selectedDorilarList.length === 0 && (currentSheet.yotoqKun || 0) === 0}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all shadow disabled:opacity-30"
+                title="Saqlash va Chek ko'rish"
               >
                 <MdReceiptLong size={18} />
               </button>
@@ -654,23 +645,9 @@ export default function AdminPharmacy() {
               </button>
 
               <button 
-                onClick={() => {
-                  setReceiptForPrint({
-                    receiptNumber: 'PREVIEW-' + Math.floor(1000 + Math.random() * 9000),
-                    sana: currentSheet.sana,
-                    bemor: currentSheet.bemor,
-                    items: selectedDorilarList,
-                    dorilarJami,
-                    yotoqKun: currentSheet.yotoqKun,
-                    yotoqJami,
-                    grandTotal,
-                    tuladi: tulanganSumma,
-                    qarz,
-                    qaytim
-                  });
-                  setIsReceiptModalOpen(true);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
+                onClick={() => saveAndPrintReceipt(true)}
+                disabled={selectedDorilarList.length === 0 && (currentSheet.yotoqKun || 0) === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-emerald-800 hover:bg-emerald-50 disabled:opacity-40 rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
               >
                 <MdPrint size={16} /> Chek / Chop etish
               </button>
@@ -1195,7 +1172,7 @@ export default function AdminPharmacy() {
                 <MdReceiptLong className="text-slate-300 mx-auto mb-3" size={48} />
                 <h4 className="font-extrabold text-slate-700 text-sm">Hali hech qanday chek yoki sotuv saqlanmagan</h4>
                 <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                  Kalkulyator oynasida bemorga dori yozib, <b>"Chekni Saqlash & Tarixga Yozish"</b> tugmasini bossangiz, cheklar shu yerda saqlanadi.
+                  Kalkulyator oynasida dorilarni tanlab, <b>"Chek / Chop etish"</b> yoki <b>"Chekni Saqlash & Tarixga Yozish"</b> tugmasini bossangiz, cheklar avtomatik shu yerga yoziladi.
                 </p>
                 <button 
                   onClick={() => setActiveMainView('calculator')}
