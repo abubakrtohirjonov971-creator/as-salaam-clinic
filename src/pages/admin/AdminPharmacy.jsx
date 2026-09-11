@@ -6,7 +6,7 @@ import {
   MdInventory, MdAttachMoney, MdLocalHospital, MdFilterList,
   MdTrendingUp, MdReceiptLong, MdCheck, MdEdit
 } from 'react-icons/md';
-import { FaFileExcel, FaBed, FaPills, FaCalculator, FaPlusCircle, FaBoxes, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { FaFileExcel, FaBed, FaPills, FaCalculator, FaPlusCircle, FaBoxes, FaEdit, FaTrashAlt, FaMoneyBillWave } from 'react-icons/fa';
 
 // Standart dorilar bazasi
 const DEFAULT_DORILAR = [
@@ -92,7 +92,7 @@ const DEFAULT_DORILAR = [
   { id: 80,  nom: 'Новокаин амп. 0,2% 2мл №10',               narx: 609,    stock: 190, category: 'Anestetik' },
   { id: 81,  nom: 'Новокаин амп. 0,5% 5мл №10',               narx: 438.2,  stock: 180, category: 'Anestetik' },
   { id: 82,  nom: 'НОЛПАЗА ПОР.40МГ ФЛАКОН №1',               narx: 59500,  stock: 35,  category: 'Flakon' },
-  { id: 83,  nom: 'Нош-pa 20 мг Амп 2мл №5',                  narx: 6524,   stock: 120, category: 'Spazmolitik' },
+  { id: 83,  nom: 'Нош-па 20 мг Амп 2мл №5',                  narx: 6524,   stock: 120, category: 'Spazmolitik' },
   { id: 84,  nom: 'Нулео цмф №3',                             narx: 37800,  stock: 25,  category: 'Ampula' },
   { id: 85,  nom: 'Осетрон р-р. д/ин 8мг/4мл №5',             narx: 29120,  stock: 40,  category: 'Ampula' },
   { id: 86,  nom: 'Панангин',                                  narx: 16800,  stock: 80,  category: 'Ampula', highlight: 'red' },
@@ -327,7 +327,7 @@ export default function AdminPharmacy() {
     return ['Barchasi', ...Array.from(list)];
   }, [dorilar]);
 
-  // Hisob-kitoblar
+  // Hisob-kitoblar (To'g'ri va aniq formula)
   const dorilarJami = useMemo(() => {
     return dorilar.reduce((sum, dori) => {
       const qty = currentQuantities[dori.id] || 0;
@@ -337,7 +337,11 @@ export default function AdminPharmacy() {
 
   const yotoqJami = (currentSheet.yotoqKun || 0) * YOTOQ_NARXI;
   const grandTotal = dorilarJami + yotoqJami;
-  const qoldi = grandTotal - (currentSheet.tuladi || 0);
+  const tulanganSumma = currentSheet.tuladi || 0;
+
+  // Qarz yoki Qaytim hisobi
+  const qarz = Math.max(0, grandTotal - tulanganSumma);
+  const qaytim = Math.max(0, tulanganSumma - grandTotal);
 
   // Tanlangan dorilar (sostav)
   const selectedDorilarList = useMemo(() => {
@@ -418,7 +422,13 @@ export default function AdminPharmacy() {
           <div>
             <p className="text-[10px] font-bold text-blue-300 uppercase tracking-wider">Umumiy Jami</p>
             <p className="text-xl font-black text-amber-300 font-mono leading-tight">{fmt(grandTotal)}</p>
-            <p className="text-[10px] text-slate-300">Qoldiq: <b className={qoldi > 0 ? 'text-red-400' : 'text-emerald-400'}>{fmt(qoldi)}</b></p>
+            <p className="text-[10px] text-slate-300">
+              {qaytim > 0 ? (
+                <span>Qaytim: <b className="text-emerald-400">+{fmt(qaytim)}</b></span>
+              ) : (
+                <span>Qarz: <b className={qarz > 0 ? 'text-red-400' : 'text-emerald-400'}>{fmt(qarz)}</b></span>
+              )}
+            </p>
           </div>
           <button 
             onClick={() => setIsReceiptModalOpen(true)}
@@ -539,7 +549,7 @@ export default function AdminPharmacy() {
       {/* ── MAIN WORKSPACE (TABLE + CALCULATION PANEL) ───────────────────── */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-3">
         
-        {/* TABLE SECTION (8.5 COLS) */}
+        {/* TABLE SECTION (8 COLS) */}
         <div className="xl:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ maxHeight: '72vh' }}>
           
           <div className="overflow-auto flex-1 select-none">
@@ -682,7 +692,7 @@ export default function AdminPharmacy() {
         {/* RIGHT CALCULATION & SUMMARY PANEL (4 COLS) */}
         <div className="xl:col-span-4 flex flex-col gap-3.5">
           
-          {/* ASL EXCEL KVADRAT HISOB-KITOB JADVALI (PREMIUM GLASS STYLING) */}
+          {/* ASL EXCEL KVADRAT HISOB-KITOB JADVALI (ANIQ VA TO'G'RI HISOB-KITOB) */}
           <div className="bg-white border-2 border-slate-900 rounded-2xl shadow-md overflow-hidden">
             <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
@@ -712,15 +722,31 @@ export default function AdminPharmacy() {
                   <td className="border-r border-slate-300 px-3.5 py-2.5 bg-slate-100 text-slate-700">
                     Ётоқ (220 000 x kun)
                   </td>
-                  <td className="border-r border-slate-300 p-0 text-center w-20 bg-amber-50">
-                    <input 
-                      type="number" 
-                      min="0"
-                      value={currentSheet.yotoqKun || ''} 
-                      onChange={e => updateSheetField('yotoqKun', parseInt(e.target.value) || 0)}
-                      placeholder="0 kun"
-                      className="w-full text-center py-2 text-xs font-black bg-transparent outline-none focus:bg-white text-purple-900 font-mono"
-                    />
+                  <td className="border-r border-slate-300 p-0 text-center w-24 bg-amber-50">
+                    <div className="flex items-center justify-between px-1">
+                      <button 
+                        type="button"
+                        onClick={() => updateSheetField('yotoqKun', Math.max(0, (currentSheet.yotoqKun || 0) - 1))}
+                        className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-amber-100 rounded text-xs"
+                      >
+                        -
+                      </button>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={currentSheet.yotoqKun || ''} 
+                        onChange={e => updateSheetField('yotoqKun', parseInt(e.target.value) || 0)}
+                        placeholder="0 kun"
+                        className="w-10 text-center py-2 text-xs font-black bg-transparent outline-none focus:bg-white text-purple-900 font-mono"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => updateSheetField('yotoqKun', (currentSheet.yotoqKun || 0) + 1)}
+                        className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-amber-100 rounded text-xs"
+                      >
+                        +
+                      </button>
+                    </div>
                   </td>
                   <td className="px-3.5 py-2.5 text-right text-purple-900 font-mono text-sm bg-purple-50/40">
                     {fmt(yotoqJami)} <span className="text-[10px] font-normal text-slate-500">so'm</span>
@@ -738,7 +764,7 @@ export default function AdminPharmacy() {
                   </td>
                 </tr>
 
-                {/* 4. Тўлади */}
+                {/* 4. Тўланди */}
                 <tr className="border-b border-slate-300">
                   <td className="border-r border-slate-300 px-3.5 py-2.5 bg-emerald-50 text-emerald-950">
                     Тўланди (Kassa)
@@ -754,15 +780,30 @@ export default function AdminPharmacy() {
                   </td>
                 </tr>
 
-                {/* 5. Қолди */}
-                <tr className="bg-red-50">
-                  <td className="border-r border-slate-300 px-3.5 py-2.5 text-red-900 font-black">
-                    Қолди (Қарз)
-                  </td>
-                  <td colSpan="2" className="px-3.5 py-2.5 text-right font-mono font-black text-base text-red-600">
-                    {fmt(qoldi)} <span className="text-xs font-normal">so'm</span>
-                  </td>
-                </tr>
+                {/* 5. Ҳолат: Қолдиқ (Қарз) ёки Қайтим (Сдача) */}
+                {qaytim > 0 ? (
+                  <tr className="bg-emerald-100/90 text-emerald-950">
+                    <td className="border-r border-slate-300 px-3.5 py-2.5 font-black text-emerald-900">
+                      Қайтим (Сдача) 🟢
+                    </td>
+                    <td colSpan="2" className="px-3.5 py-2.5 text-right font-mono font-black text-base text-emerald-700">
+                      +{fmt(qaytim)} <span className="text-xs font-normal">so'm</span>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr className={qarz > 0 ? "bg-red-50 text-red-950" : "bg-emerald-50 text-emerald-950"}>
+                    <td className="border-r border-slate-300 px-3.5 py-2.5 font-black">
+                      {qarz > 0 ? 'Қолди (Қарз) 🔴' : 'Тўлиқ тўланди ✅'}
+                    </td>
+                    <td colSpan="2" className="px-3.5 py-2.5 text-right font-mono font-black text-base">
+                      {qarz > 0 ? (
+                        <span className="text-red-600">{fmt(qarz)} <span className="text-xs font-normal">so'm</span></span>
+                      ) : (
+                        <span className="text-emerald-700">0 so'm</span>
+                      )}
+                    </td>
+                  </tr>
+                )}
 
               </tbody>
             </table>
@@ -1133,10 +1174,17 @@ export default function AdminPharmacy() {
                   <span>To'landi:</span>
                   <span>{fmt(currentSheet.tuladi || 0)} so'm</span>
                 </div>
-                <div className="flex justify-between text-xs text-red-600 font-black">
-                  <span>Qoldiq:</span>
-                  <span>{fmt(qoldi)} so'm</span>
-                </div>
+                {qaytim > 0 ? (
+                  <div className="flex justify-between text-xs text-emerald-700 font-black">
+                    <span>Qaytim (Сдача):</span>
+                    <span>+{fmt(qaytim)} so'm</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-xs text-red-600 font-black">
+                    <span>Qoldiq (Qarz):</span>
+                    <span>{fmt(qarz)} so'm</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-2 font-sans">
