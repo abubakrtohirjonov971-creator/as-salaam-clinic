@@ -4,9 +4,9 @@ import {
   MdRefresh, MdCheckCircle, MdCalendarToday, MdPerson, MdSave,
   MdViewList, MdTableChart, MdHelpOutline, MdAddCircle, MdClose,
   MdInventory, MdAttachMoney, MdLocalHospital, MdFilterList,
-  MdTrendingUp, MdReceiptLong, MdCheck
+  MdTrendingUp, MdReceiptLong, MdCheck, MdEdit
 } from 'react-icons/md';
-import { FaFileExcel, FaBed, FaPills, FaCalculator, FaPlusCircle, FaBoxes } from 'react-icons/fa';
+import { FaFileExcel, FaBed, FaPills, FaCalculator, FaPlusCircle, FaBoxes, FaEdit, FaTrashAlt } from 'react-icons/fa';
 
 // Standart dorilar bazasi
 const DEFAULT_DORILAR = [
@@ -92,7 +92,7 @@ const DEFAULT_DORILAR = [
   { id: 80,  nom: 'Новокаин амп. 0,2% 2мл №10',               narx: 609,    stock: 190, category: 'Anestetik' },
   { id: 81,  nom: 'Новокаин амп. 0,5% 5мл №10',               narx: 438.2,  stock: 180, category: 'Anestetik' },
   { id: 82,  nom: 'НОЛПАЗА ПОР.40МГ ФЛАКОН №1',               narx: 59500,  stock: 35,  category: 'Flakon' },
-  { id: 83,  nom: 'Нош-па 20 мг Амп 2мл №5',                  narx: 6524,   stock: 120, category: 'Spazmolitik' },
+  { id: 83,  nom: 'Нош-pa 20 мг Амп 2мл №5',                  narx: 6524,   stock: 120, category: 'Spazmolitik' },
   { id: 84,  nom: 'Нулео цмф №3',                             narx: 37800,  stock: 25,  category: 'Ampula' },
   { id: 85,  nom: 'Осетрон р-р. д/ин 8мг/4мл №5',             narx: 29120,  stock: 40,  category: 'Ampula' },
   { id: 86,  nom: 'Панангин',                                  narx: 16800,  stock: 80,  category: 'Ampula', highlight: 'red' },
@@ -160,7 +160,6 @@ const fmt = (n) => (Math.round(n || 0)).toLocaleString('uz-UZ');
 const todayStr = () => new Date().toISOString().split('T')[0];
 
 export default function AdminPharmacy() {
-  // LocalStorage dan dorilar ro'yxatini yuklash yoki default qo'yish
   const [dorilar, setDorilar] = useState(() => {
     try {
       const saved = localStorage.getItem('assalam_dorilar_list');
@@ -184,18 +183,21 @@ export default function AdminPharmacy() {
   const [onlySelected, setOnlySelected] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  
+  // Tahrirlash modali
+  const [editingDrug, setEditingDrug] = useState(null);
 
   // Yangi dori qo'shish formasi
   const [newDrug, setNewDrug] = useState({
     nom: '',
     narx: '',
     stock: 50,
-    category: 'Ampula'
+    category: 'Ampula',
+    highlight: 'none'
   });
 
   const inputRefs = useRef({});
 
-  // Dorilar o'zgarganda LocalStorage ga yozish
   useEffect(() => {
     localStorage.setItem('assalam_dorilar_list', JSON.stringify(dorilar));
   }, [dorilar]);
@@ -249,12 +251,43 @@ export default function AdminPharmacy() {
       nom: newDrug.nom.trim(),
       narx: parseFloat(newDrug.narx),
       stock: parseInt(newDrug.stock) || 50,
-      category: newDrug.category || 'Boshqa'
+      category: newDrug.category || 'Boshqa',
+      highlight: newDrug.highlight === 'none' ? undefined : newDrug.highlight
     };
 
     setDorilar([added, ...dorilar]);
-    setNewDrug({ nom: '', narx: '', stock: 50, category: 'Ampula' });
+    setNewDrug({ nom: '', narx: '', stock: 50, category: 'Ampula', highlight: 'none' });
     setIsAddModalOpen(false);
+  };
+
+  // Dorini tahrirlashni saqlash
+  const handleUpdateDrug = (e) => {
+    e.preventDefault();
+    if (!editingDrug || !editingDrug.nom.trim() || !editingDrug.narx) return;
+
+    setDorilar(prev => prev.map(d => {
+      if (d.id === editingDrug.id) {
+        return {
+          ...d,
+          nom: editingDrug.nom.trim(),
+          narx: parseFloat(editingDrug.narx),
+          stock: parseInt(editingDrug.stock) || 0,
+          category: editingDrug.category || 'Boshqa',
+          highlight: editingDrug.highlight === 'none' ? undefined : editingDrug.highlight
+        };
+      }
+      return d;
+    }));
+
+    setEditingDrug(null);
+  };
+
+  // Dorini o'chirish
+  const handleDeleteDrug = (id, nom) => {
+    if (window.confirm(`Haqiqatdan ham "${nom}" dorisini bazadan o'chirmoqchimisiz?`)) {
+      setDorilar(prev => prev.filter(d => d.id !== id));
+      if (editingDrug?.id === id) setEditingDrug(null);
+    }
   };
 
   // Varaq qo'shish
@@ -513,12 +546,13 @@ export default function AdminPharmacy() {
             <table className="w-full text-xs border-collapse">
               <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-300 z-10 shadow-sm font-sans">
                 <tr>
-                  <th className="border border-slate-200 px-2.5 py-2.5 w-12 text-center bg-slate-200/70">№</th>
+                  <th className="border border-slate-200 px-2 py-2.5 w-10 text-center bg-slate-200/70">№</th>
                   <th className="border border-slate-200 px-3.5 py-2.5 text-left">Дорилар номи</th>
                   <th className="border border-slate-200 px-3 py-2.5 text-center w-28">Ombor (Qoldiq)</th>
-                  <th className="border border-slate-200 px-3.5 py-2.5 text-right w-32">Нархи</th>
-                  <th className="border border-slate-200 px-2.5 py-2.5 text-center w-32 bg-amber-100/70 text-amber-950">Сони [+/-]</th>
-                  <th className="border border-slate-200 px-3.5 py-2.5 text-right w-36">Сумма</th>
+                  <th className="border border-slate-200 px-3 py-2.5 text-right w-28">Нархи</th>
+                  <th className="border border-slate-200 px-2 py-2.5 text-center w-28 bg-amber-100/70 text-amber-950">Сони [+/-]</th>
+                  <th className="border border-slate-200 px-3 py-2.5 text-right w-32">Сумма</th>
+                  <th className="border border-slate-200 px-2 py-2.5 text-center w-14">Amal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 font-mono">
@@ -528,7 +562,7 @@ export default function AdminPharmacy() {
                   const isSelected = qty > 0;
                   const remainingStock = Math.max(0, (dori.stock || 50) - qty);
 
-                  let rowBgClass = 'hover:bg-slate-50 transition-colors';
+                  let rowBgClass = 'hover:bg-slate-50 transition-colors group';
                   let nameStyle = 'text-slate-800 font-medium font-sans';
                   let priceStyle = 'text-red-600 font-bold';
 
@@ -539,7 +573,7 @@ export default function AdminPharmacy() {
                   }
 
                   if (isSelected) {
-                    rowBgClass = 'bg-emerald-50/70 hover:bg-emerald-100/70 font-semibold';
+                    rowBgClass = 'bg-emerald-50/70 hover:bg-emerald-100/70 font-semibold group';
                   }
 
                   return (
@@ -567,7 +601,7 @@ export default function AdminPharmacy() {
                             ? 'bg-amber-100 text-amber-800' 
                             : 'bg-slate-100 text-slate-600'
                         }`}>
-                          {remainingStock} ta qoldi
+                          {remainingStock} ta
                         </span>
                       </td>
 
@@ -618,6 +652,19 @@ export default function AdminPharmacy() {
                       <td className="border border-slate-200 px-3.5 py-1.5 text-right font-black text-slate-800 bg-slate-50/50">
                         {rowSum > 0 ? fmt(rowSum) : '0'}
                       </td>
+
+                      {/* Tahrirlash / Amal tugmasi */}
+                      <td className="border border-slate-200 px-1 py-1 text-center bg-slate-50/70">
+                        <button
+                          type="button"
+                          onClick={() => setEditingDrug({ ...dori, highlight: dori.highlight || 'none' })}
+                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Dorini tahrirlash yoki o'chirish"
+                        >
+                          <MdEdit size={15} />
+                        </button>
+                      </td>
+
                     </tr>
                   );
                 })}
@@ -628,7 +675,7 @@ export default function AdminPharmacy() {
           {/* Table Footer status bar */}
           <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-600">
             <span>Ko'rsatilmoqda: <b>{filteredDorilar.length}</b> ta dori | Tanlangan: <b className="text-emerald-700">{selectedDorilarList.length}</b> ta</span>
-            <span className="text-[11px] text-slate-500">💡 <b>Enter</b> yoki <b>↓</b> bosib tezda keyingi doriga o'tishingiz mumkin</span>
+            <span className="text-[11px] text-slate-500">💡 Qatordagi ✏️ tugmasi orqali dorini <b>tahrirlashingiz</b> mumkin</span>
           </div>
         </div>
 
@@ -795,6 +842,130 @@ export default function AdminPharmacy() {
         </button>
       </div>
 
+      {/* ── MODAL: DORINI TAHRIRLASH (EDIT MEDICINE) ────────────────────── */}
+      {editingDrug && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200">
+            
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <FaEdit size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Dorini Tahrirlash</h3>
+                  <p className="text-xs text-blue-100">ID: #{editingDrug.id} — ma'lumotlarni yangilash</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setEditingDrug(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+              >
+                <MdClose size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateDrug} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Dori nomi *</label>
+                <input 
+                  type="text"
+                  required
+                  value={editingDrug.nom}
+                  onChange={e => setEditingDrug({ ...editingDrug, nom: e.target.value })}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Sotilish Narxi (so'm) *</label>
+                  <input 
+                    type="number"
+                    required
+                    min="0"
+                    value={editingDrug.narx}
+                    onChange={e => setEditingDrug({ ...editingDrug, narx: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none font-mono font-bold text-blue-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ombordagi Soni (dona)</label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={editingDrug.stock}
+                    onChange={e => setEditingDrug({ ...editingDrug, stock: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Kategoriyasi</label>
+                  <select
+                    value={editingDrug.category || 'Boshqa'}
+                    onChange={e => setEditingDrug({ ...editingDrug, category: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none font-medium"
+                  >
+                    <option value="Ampula">Ampula</option>
+                    <option value="Flakon">Flakon / Eritma</option>
+                    <option value="Tabletka">Tabletka</option>
+                    <option value="Vitamin">Vitamin</option>
+                    <option value="Surma">Surma / Maz</option>
+                    <option value="Sarf">Sarf material</option>
+                    <option value="Xizmat">Xizmat</option>
+                    <option value="Boshqa">Boshqa</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Rang ajratish</label>
+                  <select
+                    value={editingDrug.highlight || 'none'}
+                    onChange={e => setEditingDrug({ ...editingDrug, highlight: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none font-medium"
+                  >
+                    <option value="none">Oddiy (rangsiz)</option>
+                    <option value="red">Qizil fon (Maxsus)</option>
+                    <option value="yellow">Sariq fon (Xizmat)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteDrug(editingDrug.id, editingDrug.nom)}
+                  className="px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-all flex items-center gap-1.5"
+                >
+                  <FaTrashAlt size={12} /> O'chirish
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingDrug(null)}
+                    className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-600/30 transition-all active:scale-95 flex items-center gap-1.5"
+                  >
+                    <MdSave size={16} /> Saqlash
+                  </button>
+                </div>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL: YANGI DORI QO'SHISH ──────────────────────────────────── */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -858,22 +1029,37 @@ export default function AdminPharmacy() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Kategoriyasi</label>
-                <select
-                  value={newDrug.category}
-                  onChange={e => setNewDrug({ ...newDrug, category: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none font-medium"
-                >
-                  <option value="Ampula">Ampula</option>
-                  <option value="Flakon">Flakon / Eritma</option>
-                  <option value="Tabletka">Tabletka</option>
-                  <option value="Vitamin">Vitamin</option>
-                  <option value="Surma">Surma / Maz</option>
-                  <option value="Sarf">Sarf material (Shprits, spirt...)</option>
-                  <option value="Xizmat">Xizmat</option>
-                  <option value="Boshqa">Boshqa</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Kategoriyasi</label>
+                  <select
+                    value={newDrug.category}
+                    onChange={e => setNewDrug({ ...newDrug, category: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none font-medium"
+                  >
+                    <option value="Ampula">Ampula</option>
+                    <option value="Flakon">Flakon / Eritma</option>
+                    <option value="Tabletka">Tabletka</option>
+                    <option value="Vitamin">Vitamin</option>
+                    <option value="Surma">Surma / Maz</option>
+                    <option value="Sarf">Sarf material</option>
+                    <option value="Xizmat">Xizmat</option>
+                    <option value="Boshqa">Boshqa</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Rang ajratish</label>
+                  <select
+                    value={newDrug.highlight}
+                    onChange={e => setNewDrug({ ...newDrug, highlight: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none font-medium"
+                  >
+                    <option value="none">Oddiy (rangsiz)</option>
+                    <option value="red">Qizil fon (Maxsus)</option>
+                    <option value="yellow">Sariq fon (Xizmat)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">
