@@ -4,9 +4,10 @@ import {
   MdRefresh, MdCheckCircle, MdCalendarToday, MdPerson, MdSave,
   MdViewList, MdTableChart, MdHelpOutline, MdAddCircle, MdClose,
   MdInventory, MdAttachMoney, MdLocalHospital, MdFilterList,
-  MdTrendingUp, MdReceiptLong, MdCheck, MdEdit
+  MdTrendingUp, MdReceiptLong, MdCheck, MdEdit, MdHistory,
+  MdOutlineReceipt, MdFilterAlt, MdDateRange, MdExpandMore, MdExpandLess
 } from 'react-icons/md';
-import { FaFileExcel, FaBed, FaPills, FaCalculator, FaPlusCircle, FaBoxes, FaEdit, FaTrashAlt, FaMoneyBillWave } from 'react-icons/fa';
+import { FaFileExcel, FaBed, FaPills, FaCalculator, FaPlusCircle, FaBoxes, FaEdit, FaTrashAlt, FaHistory, FaCheckDouble } from 'react-icons/fa';
 
 // Standart dorilar bazasi
 const DEFAULT_DORILAR = [
@@ -160,12 +161,26 @@ const fmt = (n) => (Math.round(n || 0)).toLocaleString('uz-UZ');
 const todayStr = () => new Date().toISOString().split('T')[0];
 
 export default function AdminPharmacy() {
+  // Asosiy ko'rinish: 'calculator' (Excel jadvali) yoki 'history' (Sotilgan/Ishlatilgan dorilar tarixi)
+  const [activeMainView, setActiveMainView] = useState('calculator');
+  const [historySubTab, setHistorySubTab] = useState('receipts'); // 'receipts' (Cheklar) | 'usage' (Sarflangan dorilar hisoboti)
+
   const [dorilar, setDorilar] = useState(() => {
     try {
       const saved = localStorage.getItem('assalam_dorilar_list');
       return saved ? JSON.parse(saved) : DEFAULT_DORILAR;
     } catch {
       return DEFAULT_DORILAR;
+    }
+  });
+
+  // Sotuvlar / Cheklar tarixi
+  const [historyReceipts, setHistoryReceipts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('assalam_pharmacy_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
   });
 
@@ -179,10 +194,13 @@ export default function AdminPharmacy() {
   });
 
   const [search, setSearch] = useState('');
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyDateFilter, setHistoryDateFilter] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Barchasi');
   const [onlySelected, setOnlySelected] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [receiptForPrint, setReceiptForPrint] = useState(null);
   
   // Tahrirlash modali
   const [editingDrug, setEditingDrug] = useState(null);
@@ -201,6 +219,10 @@ export default function AdminPharmacy() {
   useEffect(() => {
     localStorage.setItem('assalam_dorilar_list', JSON.stringify(dorilar));
   }, [dorilar]);
+
+  useEffect(() => {
+    localStorage.setItem('assalam_pharmacy_history', JSON.stringify(historyReceipts));
+  }, [historyReceipts]);
 
   const currentSheet = sheetData[activeSheet] || { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 };
   const currentQuantities = currentSheet.quantities;
@@ -355,6 +377,55 @@ export default function AdminPharmacy() {
       }));
   }, [dorilar, currentQuantities]);
 
+  // Chekni tasdiqlash va Tarixga saqlash
+  const handleSaveToHistory = () => {
+    if (selectedDorilarList.length === 0 && (currentSheet.yotoqKun || 0) === 0) {
+      alert("Iltimos, avval dori yoki yotoq belgilang!");
+      return;
+    }
+
+    const receiptNumber = 'CHK-' + Math.floor(100000 + Math.random() * 900000);
+    const newReceipt = {
+      id: Date.now(),
+      receiptNumber,
+      sheet: activeSheet,
+      sana: currentSheet.sana || todayStr(),
+      time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+      bemor: currentSheet.bemor || 'Noma\'lum bemor',
+      items: selectedDorilarList,
+      dorilarJami,
+      yotoqKun: currentSheet.yotoqKun || 0,
+      yotoqJami,
+      grandTotal,
+      tuladi: tulanganSumma,
+      qarz,
+      qaytim
+    };
+
+    // Ombordagi dorilarni kamaytirish
+    setDorilar(prev => prev.map(d => {
+      const usedQty = currentQuantities[d.id] || 0;
+      if (usedQty > 0) {
+        return {
+          ...d,
+          stock: Math.max(0, (d.stock || 50) - usedQty)
+        };
+      }
+      return d;
+    }));
+
+    setHistoryReceipts([newReceipt, ...historyReceipts]);
+
+    // Hozirgi varaqni tozalash
+    setSheetData(prev => ({
+      ...prev,
+      [activeSheet]: { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 }
+    }));
+
+    setReceiptForPrint(newReceipt);
+    setIsReceiptModalOpen(true);
+  };
+
   // Qidiruv va filtr
   const filteredDorilar = useMemo(() => {
     return dorilar.filter(dori => {
@@ -367,521 +438,927 @@ export default function AdminPharmacy() {
     });
   }, [dorilar, search, selectedCategory, onlySelected, currentQuantities]);
 
+  // TARIX HISOBLARI:
+  // 1. Filtrlangan cheklar
+  const filteredHistory = useMemo(() => {
+    return historyReceipts.filter(rc => {
+      const matchSearch = rc.bemor.toLowerCase().includes(historySearch.toLowerCase()) || 
+                          rc.receiptNumber.toLowerCase().includes(historySearch.toLowerCase());
+      const matchDate = !historyDateFilter || rc.sana === historyDateFilter;
+      return matchSearch && matchDate;
+    });
+  }, [historyReceipts, historySearch, historyDateFilter]);
+
+  // 2. Faqat ishlatilgan/sotilgan dorilarning umumiy xulosasi (Aggregated usage)
+  const aggregatedUsedDrugs = useMemo(() => {
+    const map = {};
+    filteredHistory.forEach(receipt => {
+      receipt.items.forEach(item => {
+        if (!map[item.id]) {
+          map[item.id] = {
+            id: item.id,
+            nom: item.nom,
+            category: item.category,
+            narx: item.narx,
+            totalQty: 0,
+            totalSum: 0,
+            lastDate: receipt.sana
+          };
+        }
+        map[item.id].totalQty += item.qty;
+        map[item.id].totalSum += item.total;
+      });
+    });
+    return Object.values(map).sort((a, b) => b.totalQty - a.totalQty);
+  }, [filteredHistory]);
+
+  const totalHistoryRevenue = useMemo(() => {
+    return filteredHistory.reduce((s, r) => s + r.grandTotal, 0);
+  }, [filteredHistory]);
+
+  const totalHistoryDrugsSum = useMemo(() => {
+    return filteredHistory.reduce((s, r) => s + r.dorilarJami, 0);
+  }, [filteredHistory]);
+
+  const totalHistoryBedSum = useMemo(() => {
+    return filteredHistory.reduce((s, r) => s + r.yotoqJami, 0);
+  }, [filteredHistory]);
+
+  const totalHistoryDebt = useMemo(() => {
+    return filteredHistory.reduce((s, r) => s + r.qarz, 0);
+  }, [filteredHistory]);
+
   return (
     <div className="p-4 md:p-6 bg-[#F8FAFC] min-h-screen font-sans text-slate-800">
       
-      {/* ── TOP STATS BAR (PREMIUM SAAS DASHBOARD CARDS) ────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-5">
-        
-        {/* Card 1: Jami dorilar bazada */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-            <FaBoxes size={20} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dorilar Bazasi</p>
-            <p className="text-xl font-extrabold text-slate-800">{dorilar.length} <span className="text-xs font-medium text-slate-400">tur</span></p>
-          </div>
-        </div>
-
-        {/* Card 2: Tanlangan dorilar */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-            <FaPills size={20} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tanlangan Sostav</p>
-            <p className="text-xl font-extrabold text-emerald-600">{selectedDorilarList.length} <span className="text-xs font-medium text-slate-400">ta dori</span></p>
-          </div>
-        </div>
-
-        {/* Card 3: Dorilar summasi */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
-            <MdAttachMoney size={24} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dorilar Summasi</p>
-            <p className="text-lg font-extrabold text-slate-800 truncate font-mono">{fmt(dorilarJami)} <span className="text-xs font-normal">so'm</span></p>
-          </div>
-        </div>
-
-        {/* Card 4: Yotoq summasi */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
-            <FaBed size={20} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Yotoq ({currentSheet.yotoqKun || 0} kun)</p>
-            <p className="text-lg font-extrabold text-purple-700 truncate font-mono">{fmt(yotoqJami)} <span className="text-xs font-normal">so'm</span></p>
-          </div>
-        </div>
-
-        {/* Card 5: JAMI hisob */}
-        <div className="col-span-2 lg:col-span-1 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-4 rounded-2xl shadow-md border border-slate-800 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-wider">Umumiy Jami</p>
-            <p className="text-xl font-black text-amber-300 font-mono leading-tight">{fmt(grandTotal)}</p>
-            <p className="text-[10px] text-slate-300">
-              {qaytim > 0 ? (
-                <span>Qaytim: <b className="text-emerald-400">+{fmt(qaytim)}</b></span>
-              ) : (
-                <span>Qarz: <b className={qarz > 0 ? 'text-red-400' : 'text-emerald-400'}>{fmt(qarz)}</b></span>
-              )}
-            </p>
-          </div>
-          <button 
-            onClick={() => setIsReceiptModalOpen(true)}
-            className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all shadow"
-            title="Chek ko'rish"
-          >
-            <MdReceiptLong size={18} />
-          </button>
-        </div>
-
-      </div>
-
-      {/* ── EXCEL HEADER BAR (PREMIUM GREEN TOOLBAR) ────────────────────── */}
-      <div className="bg-gradient-to-r from-[#107C41] via-[#0E6C38] to-[#0B5A2E] text-white px-5 py-3 rounded-t-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-emerald-800">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/15 rounded-xl backdrop-blur-sm shadow-inner">
-            <FaFileExcel size={22} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-sm md:text-base font-bold tracking-wide flex items-center gap-2">
-              As-salaam_Dori_va_Hisob_Kalkulyatori.xlsx
-              <span className="text-[10px] font-bold bg-emerald-400/25 text-emerald-100 border border-emerald-300/30 px-2 py-0.5 rounded-full uppercase">
-                Smart Excel
-              </span>
-            </h1>
-            <p className="text-[11px] text-emerald-100/80">Real-vaqtda ombor qoldig'i, soni va yotoq hisobi</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
+      {/* ── TOP NAVIGATION SWITCH: [ KALKULYATOR ] vs [ TARIX OYNASI ] ───── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
-          >
-            <MdAddCircle size={16} /> Yangi Dori Qo'shish
-          </button>
-
-          <button 
-            onClick={() => setIsReceiptModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
-          >
-            <MdPrint size={16} /> Chek / Chop etish
-          </button>
-        </div>
-      </div>
-
-      {/* ── FILTER & PATIENT CONTROLS ───────────────────────────────────── */}
-      <div className="bg-white border-x border-b border-slate-200 p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-        
-        {/* Search input */}
-        <div className="flex items-center gap-2 flex-1 min-w-[260px] max-w-md">
-          <div className="relative w-full">
-            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Dori nomi yoki № bo'yicha qidiruv..."
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium"
-            />
-          </div>
-        </div>
-
-        {/* Category badges */}
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-          {categories.slice(0, 7).map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                selectedCategory === cat 
-                  ? 'bg-emerald-700 text-white font-semibold shadow-sm' 
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-          
-          <button
-            onClick={() => setOnlySelected(!onlySelected)}
-            className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${
-              onlySelected 
-                ? 'bg-blue-600 text-white border-blue-700 shadow-sm' 
-                : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+            onClick={() => setActiveMainView('calculator')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-extrabold text-xs transition-all shadow-sm ${
+              activeMainView === 'calculator'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
             }`}
           >
-            Faqat tanlanganlar ({selectedDorilarList.length})
+            <FaCalculator className={activeMainView === 'calculator' ? 'text-amber-400' : 'text-slate-400'} size={15} />
+            <span>Excel Kalkulyator</span>
+          </button>
+
+          <button
+            onClick={() => setActiveMainView('history')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-extrabold text-xs transition-all shadow-sm ${
+              activeMainView === 'history'
+                ? 'bg-emerald-700 text-white shadow-md'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <FaHistory className={activeMainView === 'history' ? 'text-white' : 'text-emerald-600'} size={14} />
+            <span>Sotilgan & Ishlatilgan Dorilar Tarixi</span>
+            {historyReceipts.length > 0 && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                activeMainView === 'history' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+              }`}>
+                {historyReceipts.length}
+              </span>
+            )}
           </button>
         </div>
 
-        {/* Patient and Date */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:bg-white focus-within:border-emerald-600 transition-all">
-            <MdPerson className="text-slate-400 mr-1.5" size={16} />
-            <input 
-              type="text"
-              value={currentSheet.bemor}
-              onChange={e => updateSheetField('bemor', e.target.value)}
-              placeholder="Bemor F.I.SH."
-              className="bg-transparent text-xs text-slate-800 outline-none w-32 font-semibold"
-            />
+        {activeMainView === 'calculator' && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSaveToHistory}
+              disabled={selectedDorilarList.length === 0 && (currentSheet.yotoqKun || 0) === 0}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+            >
+              <FaCheckDouble size={14} /> Chekni Saqlash & Tarixga Yozish
+            </button>
           </div>
-
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:bg-white focus-within:border-emerald-600 transition-all">
-            <MdCalendarToday className="text-slate-400 mr-1.5" size={15} />
-            <input 
-              type="date"
-              value={currentSheet.sana}
-              onChange={e => updateSheetField('sana', e.target.value)}
-              className="bg-transparent text-xs text-slate-800 outline-none font-medium"
-            />
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* ── MAIN WORKSPACE (TABLE + CALCULATION PANEL) ───────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-3">
-        
-        {/* TABLE SECTION (8 COLS) */}
-        <div className="xl:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ maxHeight: '72vh' }}>
-          
-          <div className="overflow-auto flex-1 select-none">
-            <table className="w-full text-xs border-collapse">
-              <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-300 z-10 shadow-sm font-sans">
-                <tr>
-                  <th className="border border-slate-200 px-2 py-2.5 w-10 text-center bg-slate-200/70">№</th>
-                  <th className="border border-slate-200 px-3.5 py-2.5 text-left">Дорилар номи</th>
-                  <th className="border border-slate-200 px-3 py-2.5 text-center w-28">Ombor (Qoldiq)</th>
-                  <th className="border border-slate-200 px-3 py-2.5 text-right w-28">Нархи</th>
-                  <th className="border border-slate-200 px-2 py-2.5 text-center w-28 bg-amber-100/70 text-amber-950">Сони [+/-]</th>
-                  <th className="border border-slate-200 px-3 py-2.5 text-right w-32">Сумма</th>
-                  <th className="border border-slate-200 px-2 py-2.5 text-center w-14">Amal</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 font-mono">
-                {filteredDorilar.map((dori, idx) => {
-                  const qty = currentQuantities[dori.id] || 0;
-                  const rowSum = dori.narx * qty;
-                  const isSelected = qty > 0;
-                  const remainingStock = Math.max(0, (dori.stock || 50) - qty);
+      {activeMainView === 'calculator' ? (
+        <>
+          {/* ── TOP STATS BAR (PREMIUM SAAS DASHBOARD CARDS) ────────────────── */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-5">
+            
+            {/* Card 1: Jami dorilar bazada */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                <FaBoxes size={20} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dorilar Bazasi</p>
+                <p className="text-xl font-extrabold text-slate-800">{dorilar.length} <span className="text-xs font-medium text-slate-400">tur</span></p>
+              </div>
+            </div>
 
-                  let rowBgClass = 'hover:bg-slate-50 transition-colors group';
-                  let nameStyle = 'text-slate-800 font-medium font-sans';
-                  let priceStyle = 'text-red-600 font-bold';
+            {/* Card 2: Tanlangan dorilar */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                <FaPills size={20} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tanlangan Sostav</p>
+                <p className="text-xl font-extrabold text-emerald-600">{selectedDorilarList.length} <span className="text-xs font-medium text-slate-400">ta dori</span></p>
+              </div>
+            </div>
 
-                  if (dori.highlight === 'red') {
-                    nameStyle = 'bg-red-500 text-white font-bold font-sans px-2 py-0.5 rounded shadow-sm inline-block';
-                  } else if (dori.highlight === 'yellow') {
-                    nameStyle = 'bg-amber-300 text-amber-950 font-bold font-sans px-2 py-0.5 rounded shadow-sm inline-block';
-                  }
+            {/* Card 3: Dorilar summasi */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                <MdAttachMoney size={24} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dorilar Summasi</p>
+                <p className="text-lg font-extrabold text-slate-800 truncate font-mono">{fmt(dorilarJami)} <span className="text-xs font-normal">so'm</span></p>
+              </div>
+            </div>
 
-                  if (isSelected) {
-                    rowBgClass = 'bg-emerald-50/70 hover:bg-emerald-100/70 font-semibold group';
-                  }
+            {/* Card 4: Yotoq summasi */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+                <FaBed size={20} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Yotoq ({currentSheet.yotoqKun || 0} kun)</p>
+                <p className="text-lg font-extrabold text-purple-700 truncate font-mono">{fmt(yotoqJami)} <span className="text-xs font-normal">so'm</span></p>
+              </div>
+            </div>
 
-                  return (
-                    <tr key={dori.id} className={`border-b border-slate-200 ${rowBgClass}`}>
-                      
-                      {/* № */}
-                      <td className="border border-slate-200 px-2 py-1.5 text-center bg-slate-50 text-slate-500 text-[11px] font-sans">
-                        {dori.id}
-                      </td>
+            {/* Card 5: JAMI hisob */}
+            <div className="col-span-2 lg:col-span-1 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-4 rounded-2xl shadow-md border border-slate-800 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-blue-300 uppercase tracking-wider">Umumiy Jami</p>
+                <p className="text-xl font-black text-amber-300 font-mono leading-tight">{fmt(grandTotal)}</p>
+                <p className="text-[10px] text-slate-300">
+                  {qaytim > 0 ? (
+                    <span>Qaytim: <b className="text-emerald-400">+{fmt(qaytim)}</b></span>
+                  ) : (
+                    <span>Qarz: <b className={qarz > 0 ? 'text-red-400' : 'text-emerald-400'}>{fmt(qarz)}</b></span>
+                  )}
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  setReceiptForPrint({
+                    receiptNumber: 'PREVIEW-' + Math.floor(1000 + Math.random() * 9000),
+                    sana: currentSheet.sana,
+                    bemor: currentSheet.bemor,
+                    items: selectedDorilarList,
+                    dorilarJami,
+                    yotoqKun: currentSheet.yotoqKun,
+                    yotoqJami,
+                    grandTotal,
+                    tuladi: tulanganSumma,
+                    qarz,
+                    qaytim
+                  });
+                  setIsReceiptModalOpen(true);
+                }}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all shadow"
+                title="Chek ko'rish"
+              >
+                <MdReceiptLong size={18} />
+              </button>
+            </div>
 
-                      {/* Dori nomi */}
-                      <td className="border border-slate-200 px-3 py-1.5">
-                        <span className={nameStyle}>{dori.nom}</span>
-                        {dori.category && (
-                          <span className="ml-2 text-[10px] text-slate-400 font-sans">({dori.category})</span>
-                        )}
-                      </td>
+          </div>
 
-                      {/* Ombordagi Qoldiq */}
-                      <td className="border border-slate-200 px-2 py-1.5 text-center font-sans">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          remainingStock <= 5 
-                            ? 'bg-red-100 text-red-700 animate-pulse' 
-                            : remainingStock <= 15 
-                            ? 'bg-amber-100 text-amber-800' 
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {remainingStock} ta
-                        </span>
-                      </td>
+          {/* ── EXCEL HEADER BAR (PREMIUM GREEN TOOLBAR) ────────────────────── */}
+          <div className="bg-gradient-to-r from-[#107C41] via-[#0E6C38] to-[#0B5A2E] text-white px-5 py-3 rounded-t-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-emerald-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/15 rounded-xl backdrop-blur-sm shadow-inner">
+                <FaFileExcel size={22} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-sm md:text-base font-bold tracking-wide flex items-center gap-2">
+                  As-salaam_Dori_va_Hisob_Kalkulyatori.xlsx
+                  <span className="text-[10px] font-bold bg-emerald-400/25 text-emerald-100 border border-emerald-300/30 px-2 py-0.5 rounded-full uppercase">
+                    Smart Excel
+                  </span>
+                </h1>
+                <p className="text-[11px] text-emerald-100/80">Real-vaqtda ombor qoldig'i, soni va yotoq hisobi</p>
+              </div>
+            </div>
 
-                      {/* Sotilish narxi */}
-                      <td className={`border border-slate-200 px-3 py-1.5 text-right ${priceStyle}`}>
-                        {dori.narx > 0 ? fmt(dori.narx) : '0'}
-                      </td>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
+              >
+                <MdAddCircle size={16} /> Yangi Dori Qo'shish
+              </button>
 
-                      {/* Soni (Katakka yozish + Enter/Arrow navigatsiyasi) */}
-                      <td className={`border border-slate-200 p-0 text-center relative ${qty === 0 ? 'bg-[#990000] text-white' : 'bg-[#107C41] text-white'}`}>
-                        <div className="flex items-center justify-between h-full px-1.5 py-1">
+              <button 
+                onClick={() => {
+                  setReceiptForPrint({
+                    receiptNumber: 'PREVIEW-' + Math.floor(1000 + Math.random() * 9000),
+                    sana: currentSheet.sana,
+                    bemor: currentSheet.bemor,
+                    items: selectedDorilarList,
+                    dorilarJami,
+                    yotoqKun: currentSheet.yotoqKun,
+                    yotoqJami,
+                    grandTotal,
+                    tuladi: tulanganSumma,
+                    qarz,
+                    qaytim
+                  });
+                  setIsReceiptModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
+              >
+                <MdPrint size={16} /> Chek / Chop etish
+              </button>
+            </div>
+          </div>
+
+          {/* ── FILTER & PATIENT CONTROLS ───────────────────────────────────── */}
+          <div className="bg-white border-x border-b border-slate-200 p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+            
+            {/* Search input */}
+            <div className="flex items-center gap-2 flex-1 min-w-[260px] max-w-md">
+              <div className="relative w-full">
+                <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Dori nomi yoki № bo'yicha qidiruv..."
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none transition-all font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Category badges */}
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+              {categories.slice(0, 7).map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                    selectedCategory === cat 
+                      ? 'bg-emerald-700 text-white font-semibold shadow-sm' 
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => setOnlySelected(!onlySelected)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${
+                  onlySelected 
+                    ? 'bg-blue-600 text-white border-blue-700 shadow-sm' 
+                    : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                }`}
+              >
+                Faqat tanlanganlar ({selectedDorilarList.length})
+              </button>
+            </div>
+
+            {/* Patient and Date */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:bg-white focus-within:border-emerald-600 transition-all">
+                <MdPerson className="text-slate-400 mr-1.5" size={16} />
+                <input 
+                  type="text"
+                  value={currentSheet.bemor}
+                  onChange={e => updateSheetField('bemor', e.target.value)}
+                  placeholder="Bemor F.I.SH."
+                  className="bg-transparent text-xs text-slate-800 outline-none w-32 font-semibold"
+                />
+              </div>
+
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:bg-white focus-within:border-emerald-600 transition-all">
+                <MdCalendarToday className="text-slate-400 mr-1.5" size={15} />
+                <input 
+                  type="date"
+                  value={currentSheet.sana}
+                  onChange={e => updateSheetField('sana', e.target.value)}
+                  className="bg-transparent text-xs text-slate-800 outline-none font-medium"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── MAIN WORKSPACE (TABLE + CALCULATION PANEL) ───────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-3">
+            
+            {/* TABLE SECTION (8 COLS) */}
+            <div className="xl:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ maxHeight: '72vh' }}>
+              
+              <div className="overflow-auto flex-1 select-none">
+                <table className="w-full text-xs border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-300 z-10 shadow-sm font-sans">
+                    <tr>
+                      <th className="border border-slate-200 px-2 py-2.5 w-10 text-center bg-slate-200/70">№</th>
+                      <th className="border border-slate-200 px-3.5 py-2.5 text-left">Дорилар номи</th>
+                      <th className="border border-slate-200 px-3 py-2.5 text-center w-28">Ombor (Qoldiq)</th>
+                      <th className="border border-slate-200 px-3 py-2.5 text-right w-28">Нархи</th>
+                      <th className="border border-slate-200 px-2 py-2.5 text-center w-28 bg-amber-100/70 text-amber-950">Сони [+/-]</th>
+                      <th className="border border-slate-200 px-3 py-2.5 text-right w-32">Сумма</th>
+                      <th className="border border-slate-200 px-2 py-2.5 text-center w-14">Amal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 font-mono">
+                    {filteredDorilar.map((dori, idx) => {
+                      const qty = currentQuantities[dori.id] || 0;
+                      const rowSum = dori.narx * qty;
+                      const isSelected = qty > 0;
+                      const remainingStock = Math.max(0, (dori.stock || 50) - qty);
+
+                      let rowBgClass = 'hover:bg-slate-50 transition-colors group';
+                      let nameStyle = 'text-slate-800 font-medium font-sans';
+                      let priceStyle = 'text-red-600 font-bold';
+
+                      if (dori.highlight === 'red') {
+                        nameStyle = 'bg-red-500 text-white font-bold font-sans px-2 py-0.5 rounded shadow-sm inline-block';
+                      } else if (dori.highlight === 'yellow') {
+                        nameStyle = 'bg-amber-300 text-amber-950 font-bold font-sans px-2 py-0.5 rounded shadow-sm inline-block';
+                      }
+
+                      if (isSelected) {
+                        rowBgClass = 'bg-emerald-50/70 hover:bg-emerald-100/70 font-semibold group';
+                      }
+
+                      return (
+                        <tr key={dori.id} className={`border-b border-slate-200 ${rowBgClass}`}>
                           
-                          {/* Minus button */}
-                          <button
+                          {/* № */}
+                          <td className="border border-slate-200 px-2 py-1.5 text-center bg-slate-50 text-slate-500 text-[11px] font-sans">
+                            {dori.id}
+                          </td>
+
+                          {/* Dori nomi */}
+                          <td className="border border-slate-200 px-3 py-1.5">
+                            <span className={nameStyle}>{dori.nom}</span>
+                            {dori.category && (
+                              <span className="ml-2 text-[10px] text-slate-400 font-sans">({dori.category})</span>
+                            )}
+                          </td>
+
+                          {/* Ombordagi Qoldiq */}
+                          <td className="border border-slate-200 px-2 py-1.5 text-center font-sans">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              remainingStock <= 5 
+                                ? 'bg-red-100 text-red-700 animate-pulse' 
+                                : remainingStock <= 15 
+                                ? 'bg-amber-100 text-amber-800' 
+                                : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {remainingStock} ta
+                            </span>
+                          </td>
+
+                          {/* Sotilish narxi */}
+                          <td className={`border border-slate-200 px-3 py-1.5 text-right ${priceStyle}`}>
+                            {dori.narx > 0 ? fmt(dori.narx) : '0'}
+                          </td>
+
+                          {/* Soni (Katakka yozish + Enter/Arrow navigatsiyasi) */}
+                          <td className={`border border-slate-200 p-0 text-center relative ${qty === 0 ? 'bg-[#990000] text-white' : 'bg-[#107C41] text-white'}`}>
+                            <div className="flex items-center justify-between h-full px-1.5 py-1">
+                              
+                              {/* Minus button */}
+                              <button
+                                type="button"
+                                onClick={() => decrementQty(dori.id)}
+                                className="w-5 h-5 flex items-center justify-center text-white/90 hover:text-white hover:bg-black/20 rounded text-xs font-black transition-all active:scale-90"
+                                title="Kamaytirish"
+                              >
+                                -
+                              </button>
+
+                              {/* Editable Number Input (Excel cell) */}
+                              <input
+                                ref={el => inputRefs.current[dori.id] = el}
+                                type="number"
+                                min="0"
+                                value={qty === 0 ? '' : qty}
+                                placeholder="0"
+                                onChange={e => handleQuantityChange(dori.id, e.target.value)}
+                                onKeyDown={e => handleKeyDown(e, idx)}
+                                className="w-12 text-center bg-transparent text-white font-black text-xs outline-none focus:bg-white focus:text-slate-900 focus:ring-2 focus:ring-yellow-400 rounded py-0.5 shadow-inner"
+                              />
+
+                              {/* Plus button */}
+                              <button
+                                type="button"
+                                onClick={() => incrementQty(dori.id)}
+                                className="w-5 h-5 flex items-center justify-center text-white/90 hover:text-white hover:bg-black/20 rounded text-xs font-black transition-all active:scale-90"
+                                title="Ko'paytirish"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Summa */}
+                          <td className="border border-slate-200 px-3.5 py-1.5 text-right font-black text-slate-800 bg-slate-50/50">
+                            {rowSum > 0 ? fmt(rowSum) : '0'}
+                          </td>
+
+                          {/* Tahrirlash / Amal tugmasi */}
+                          <td className="border border-slate-200 px-1 py-1 text-center bg-slate-50/70">
+                            <button
+                              type="button"
+                              onClick={() => setEditingDrug({ ...dori, highlight: dori.highlight || 'none' })}
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                              title="Dorini tahrirlash yoki o'chirish"
+                            >
+                              <MdEdit size={15} />
+                            </button>
+                          </td>
+
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Table Footer status bar */}
+              <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-600">
+                <span>Ko'rsatilmoqda: <b>{filteredDorilar.length}</b> ta dori | Tanlangan: <b className="text-emerald-700">{selectedDorilarList.length}</b> ta</span>
+                <span className="text-[11px] text-slate-500">💡 Qatordagi ✏️ tugmasi orqali dorini <b>tahrirlashingiz</b> mumkin</span>
+              </div>
+            </div>
+
+            {/* RIGHT CALCULATION & SUMMARY PANEL (4 COLS) */}
+            <div className="xl:col-span-4 flex flex-col gap-3.5">
+              
+              {/* ASL EXCEL KVADRAT HISOB-KITOB JADVALI (ANIQ VA TO'G'RI HISOB-KITOB) */}
+              <div className="bg-white border-2 border-slate-900 rounded-2xl shadow-md overflow-hidden">
+                <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                    <FaCalculator className="text-amber-400" /> Bemor Hisob-Kalkulyatori
+                  </span>
+                  <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono font-bold">{activeSheet}</span>
+                </div>
+
+                <table className="w-full text-xs border-collapse font-sans font-bold">
+                  <tbody>
+                    
+                    {/* 1. Дорилар */}
+                    <tr className="border-b border-slate-300">
+                      <td className="border-r border-slate-300 px-3.5 py-2.5 bg-slate-100 text-slate-700 w-32">
+                        Дорилар (жами)
+                      </td>
+                      <td className="border-r border-slate-300 px-2 py-2 text-center w-16 bg-slate-50 text-[10px] text-slate-400 font-mono">
+                        {selectedDorilarList.length} ta
+                      </td>
+                      <td className="px-3.5 py-2.5 text-right text-slate-900 font-mono text-sm bg-blue-50/40">
+                        {fmt(dorilarJami)} <span className="text-[10px] font-normal text-slate-500">so'm</span>
+                      </td>
+                    </tr>
+
+                    {/* 2. Ётоқ */}
+                    <tr className="border-b border-slate-300">
+                      <td className="border-r border-slate-300 px-3.5 py-2.5 bg-slate-100 text-slate-700">
+                        Ётоқ (220 000 x kun)
+                      </td>
+                      <td className="border-r border-slate-300 p-0 text-center w-24 bg-amber-50">
+                        <div className="flex items-center justify-between px-1">
+                          <button 
                             type="button"
-                            onClick={() => decrementQty(dori.id)}
-                            className="w-5 h-5 flex items-center justify-center text-white/90 hover:text-white hover:bg-black/20 rounded text-xs font-black transition-all active:scale-90"
-                            title="Kamaytirish"
+                            onClick={() => updateSheetField('yotoqKun', Math.max(0, (currentSheet.yotoqKun || 0) - 1))}
+                            className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-amber-100 rounded text-xs"
                           >
                             -
                           </button>
-
-                          {/* Editable Number Input (Excel cell) */}
-                          <input
-                            ref={el => inputRefs.current[dori.id] = el}
-                            type="number"
+                          <input 
+                            type="number" 
                             min="0"
-                            value={qty === 0 ? '' : qty}
-                            placeholder="0"
-                            onChange={e => handleQuantityChange(dori.id, e.target.value)}
-                            onKeyDown={e => handleKeyDown(e, idx)}
-                            className="w-12 text-center bg-transparent text-white font-black text-xs outline-none focus:bg-white focus:text-slate-900 focus:ring-2 focus:ring-yellow-400 rounded py-0.5 shadow-inner"
+                            value={currentSheet.yotoqKun || ''} 
+                            onChange={e => updateSheetField('yotoqKun', parseInt(e.target.value) || 0)}
+                            placeholder="0 kun"
+                            className="w-10 text-center py-2 text-xs font-black bg-transparent outline-none focus:bg-white text-purple-900 font-mono"
                           />
-
-                          {/* Plus button */}
-                          <button
+                          <button 
                             type="button"
-                            onClick={() => incrementQty(dori.id)}
-                            className="w-5 h-5 flex items-center justify-center text-white/90 hover:text-white hover:bg-black/20 rounded text-xs font-black transition-all active:scale-90"
-                            title="Ko'paytirish"
+                            onClick={() => updateSheetField('yotoqKun', (currentSheet.yotoqKun || 0) + 1)}
+                            className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-amber-100 rounded text-xs"
                           >
                             +
                           </button>
                         </div>
                       </td>
-
-                      {/* Summa */}
-                      <td className="border border-slate-200 px-3.5 py-1.5 text-right font-black text-slate-800 bg-slate-50/50">
-                        {rowSum > 0 ? fmt(rowSum) : '0'}
+                      <td className="px-3.5 py-2.5 text-right text-purple-900 font-mono text-sm bg-purple-50/40">
+                        {fmt(yotoqJami)} <span className="text-[10px] font-normal text-slate-500">so'm</span>
                       </td>
-
-                      {/* Tahrirlash / Amal tugmasi */}
-                      <td className="border border-slate-200 px-1 py-1 text-center bg-slate-50/70">
-                        <button
-                          type="button"
-                          onClick={() => setEditingDrug({ ...dori, highlight: dori.highlight || 'none' })}
-                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Dorini tahrirlash yoki o'chirish"
-                        >
-                          <MdEdit size={15} />
-                        </button>
-                      </td>
-
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
 
-          {/* Table Footer status bar */}
-          <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-600">
-            <span>Ko'rsatilmoqda: <b>{filteredDorilar.length}</b> ta dori | Tanlangan: <b className="text-emerald-700">{selectedDorilarList.length}</b> ta</span>
-            <span className="text-[11px] text-slate-500">💡 Qatordagi ✏️ tugmasi orqali dorini <b>tahrirlashingiz</b> mumkin</span>
-          </div>
-        </div>
+                    {/* 3. Жами */}
+                    <tr className="border-b-2 border-slate-900 bg-slate-900 text-white">
+                      <td className="border-r border-slate-700 px-3.5 py-3 text-sm uppercase">ЖАМИ ТЎЛОВ</td>
+                      <td className="border-r border-slate-700 px-2 py-3 text-center text-[11px] text-slate-400 font-mono">
+                        {currentSheet.yotoqKun ? `${currentSheet.yotoqKun} kun` : '-'}
+                      </td>
+                      <td className="px-3.5 py-3 text-right font-mono text-base text-amber-300 font-black">
+                        {fmt(grandTotal)} <span className="text-xs text-amber-200 font-normal">so'm</span>
+                      </td>
+                    </tr>
 
-        {/* RIGHT CALCULATION & SUMMARY PANEL (4 COLS) */}
-        <div className="xl:col-span-4 flex flex-col gap-3.5">
-          
-          {/* ASL EXCEL KVADRAT HISOB-KITOB JADVALI (ANIQ VA TO'G'RI HISOB-KITOB) */}
-          <div className="bg-white border-2 border-slate-900 rounded-2xl shadow-md overflow-hidden">
-            <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-                <FaCalculator className="text-amber-400" /> Bemor Hisob-Kalkulyatori
-              </span>
-              <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono font-bold">{activeSheet}</span>
-            </div>
+                    {/* 4. Тўланди */}
+                    <tr className="border-b border-slate-300">
+                      <td className="border-r border-slate-300 px-3.5 py-2.5 bg-emerald-50 text-emerald-950">
+                        Тўланди (Kassa)
+                      </td>
+                      <td colSpan="2" className="p-0 bg-emerald-50">
+                        <input 
+                          type="number"
+                          value={currentSheet.tuladi || ''}
+                          onChange={e => updateSheetField('tuladi', parseInt(e.target.value) || 0)}
+                          placeholder="To'langan summani kiriting..."
+                          className="w-full px-3.5 py-2 text-right font-mono font-black text-sm text-emerald-800 bg-transparent outline-none focus:bg-white"
+                        />
+                      </td>
+                    </tr>
 
-            <table className="w-full text-xs border-collapse font-sans font-bold">
-              <tbody>
-                
-                {/* 1. Дорилар */}
-                <tr className="border-b border-slate-300">
-                  <td className="border-r border-slate-300 px-3.5 py-2.5 bg-slate-100 text-slate-700 w-32">
-                    Дорилар (жами)
-                  </td>
-                  <td className="border-r border-slate-300 px-2 py-2 text-center w-16 bg-slate-50 text-[10px] text-slate-400 font-mono">
-                    {selectedDorilarList.length} ta
-                  </td>
-                  <td className="px-3.5 py-2.5 text-right text-slate-900 font-mono text-sm bg-blue-50/40">
-                    {fmt(dorilarJami)} <span className="text-[10px] font-normal text-slate-500">so'm</span>
-                  </td>
-                </tr>
+                    {/* 5. Ҳолат: Қолдиқ (Қарз) ёки Қайтим (Сдача) */}
+                    {qaytim > 0 ? (
+                      <tr className="bg-emerald-100/90 text-emerald-950">
+                        <td className="border-r border-slate-300 px-3.5 py-2.5 font-black text-emerald-900">
+                          Қайтим (Сдача) 🟢
+                        </td>
+                        <td colSpan="2" className="px-3.5 py-2.5 text-right font-mono font-black text-base text-emerald-700">
+                          +{fmt(qaytim)} <span className="text-xs font-normal">so'm</span>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr className={qarz > 0 ? "bg-red-50 text-red-950" : "bg-emerald-50 text-emerald-950"}>
+                        <td className="border-r border-slate-300 px-3.5 py-2.5 font-black">
+                          {qarz > 0 ? 'Қолди (Қарз) 🔴' : 'Тўлиқ тўланди ✅'}
+                        </td>
+                        <td colSpan="2" className="px-3.5 py-2.5 text-right font-mono font-black text-base">
+                          {qarz > 0 ? (
+                            <span className="text-red-600">{fmt(qarz)} <span className="text-xs font-normal">so'm</span></span>
+                          ) : (
+                            <span className="text-emerald-700">0 so'm</span>
+                          )}
+                        </td>
+                      </tr>
+                    )}
 
-                {/* 2. Ётоқ */}
-                <tr className="border-b border-slate-300">
-                  <td className="border-r border-slate-300 px-3.5 py-2.5 bg-slate-100 text-slate-700">
-                    Ётоқ (220 000 x kun)
-                  </td>
-                  <td className="border-r border-slate-300 p-0 text-center w-24 bg-amber-50">
-                    <div className="flex items-center justify-between px-1">
-                      <button 
-                        type="button"
-                        onClick={() => updateSheetField('yotoqKun', Math.max(0, (currentSheet.yotoqKun || 0) - 1))}
-                        className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-amber-100 rounded text-xs"
-                      >
-                        -
-                      </button>
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={currentSheet.yotoqKun || ''} 
-                        onChange={e => updateSheetField('yotoqKun', parseInt(e.target.value) || 0)}
-                        placeholder="0 kun"
-                        className="w-10 text-center py-2 text-xs font-black bg-transparent outline-none focus:bg-white text-purple-900 font-mono"
-                      />
-                      <button 
-                        type="button"
-                        onClick={() => updateSheetField('yotoqKun', (currentSheet.yotoqKun || 0) + 1)}
-                        className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-amber-100 rounded text-xs"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-3.5 py-2.5 text-right text-purple-900 font-mono text-sm bg-purple-50/40">
-                    {fmt(yotoqJami)} <span className="text-[10px] font-normal text-slate-500">so'm</span>
-                  </td>
-                </tr>
+                  </tbody>
+                </table>
+              </div>
 
-                {/* 3. Жами */}
-                <tr className="border-b-2 border-slate-900 bg-slate-900 text-white">
-                  <td className="border-r border-slate-700 px-3.5 py-3 text-sm uppercase">ЖАМИ ТЎЛОВ</td>
-                  <td className="border-r border-slate-700 px-2 py-3 text-center text-[11px] text-slate-400 font-mono">
-                    {currentSheet.yotoqKun ? `${currentSheet.yotoqKun} kun` : '-'}
-                  </td>
-                  <td className="px-3.5 py-3 text-right font-mono text-base text-amber-300 font-black">
-                    {fmt(grandTotal)} <span className="text-xs text-amber-200 font-normal">so'm</span>
-                  </td>
-                </tr>
+              {/* TANLANGAN DORILAR SOSTAVI */}
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex-1 flex flex-col">
+                <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                  <h3 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5 uppercase tracking-wide">
+                    <FaPills className="text-emerald-600" /> Tanlangan Sostav ({selectedDorilarList.length})
+                  </h3>
+                  <span className="text-[11px] font-bold text-slate-400 font-mono">{currentSheet.sana}</span>
+                </div>
 
-                {/* 4. Тўланди */}
-                <tr className="border-b border-slate-300">
-                  <td className="border-r border-slate-300 px-3.5 py-2.5 bg-emerald-50 text-emerald-950">
-                    Тўланди (Kassa)
-                  </td>
-                  <td colSpan="2" className="p-0 bg-emerald-50">
-                    <input 
-                      type="number"
-                      value={currentSheet.tuladi || ''}
-                      onChange={e => updateSheetField('tuladi', parseInt(e.target.value) || 0)}
-                      placeholder="To'langan summani kiriting..."
-                      className="w-full px-3.5 py-2 text-right font-mono font-black text-sm text-emerald-800 bg-transparent outline-none focus:bg-white"
-                    />
-                  </td>
-                </tr>
-
-                {/* 5. Ҳолат: Қолдиқ (Қарз) ёки Қайтим (Сдача) */}
-                {qaytim > 0 ? (
-                  <tr className="bg-emerald-100/90 text-emerald-950">
-                    <td className="border-r border-slate-300 px-3.5 py-2.5 font-black text-emerald-900">
-                      Қайтим (Сдача) 🟢
-                    </td>
-                    <td colSpan="2" className="px-3.5 py-2.5 text-right font-mono font-black text-base text-emerald-700">
-                      +{fmt(qaytim)} <span className="text-xs font-normal">so'm</span>
-                    </td>
-                  </tr>
+                {selectedDorilarList.length === 0 ? (
+                  <div className="py-10 text-center text-slate-400 text-xs flex flex-col items-center justify-center flex-1">
+                    <FaPills className="text-slate-200 mb-2.5" size={28} />
+                    <p className="font-semibold text-slate-600">Hozircha dori tanlanmadi</p>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-xs">Jadvaldagi katakka sonini yozing yoki [+] tugmasini bosing.</p>
+                  </div>
                 ) : (
-                  <tr className={qarz > 0 ? "bg-red-50 text-red-950" : "bg-emerald-50 text-emerald-950"}>
-                    <td className="border-r border-slate-300 px-3.5 py-2.5 font-black">
-                      {qarz > 0 ? 'Қолди (Қарз) 🔴' : 'Тўлиқ тўланди ✅'}
-                    </td>
-                    <td colSpan="2" className="px-3.5 py-2.5 text-right font-mono font-black text-base">
-                      {qarz > 0 ? (
-                        <span className="text-red-600">{fmt(qarz)} <span className="text-xs font-normal">so'm</span></span>
-                      ) : (
-                        <span className="text-emerald-700">0 so'm</span>
-                      )}
-                    </td>
-                  </tr>
+                  <div className="overflow-y-auto space-y-2 pr-1 flex-1" style={{ maxHeight: '230px' }}>
+                    {selectedDorilarList.map((item, i) => (
+                      <div key={item.id} className="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 transition-all">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="font-bold text-slate-800 truncate text-[11px]">{i + 1}. {item.nom}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">{fmt(item.narx)} × {item.qty} dona (Qoldi: {item.remainingStock})</p>
+                        </div>
+                        <span className="font-mono font-black text-emerald-800 text-xs whitespace-nowrap">
+                          {fmt(item.total)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
-
-              </tbody>
-            </table>
-          </div>
-
-          {/* TANLANGAN DORILAR SOSTAVI */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex-1 flex flex-col">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
-              <h3 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5 uppercase tracking-wide">
-                <FaPills className="text-emerald-600" /> Tanlangan Sostav ({selectedDorilarList.length})
-              </h3>
-              <span className="text-[11px] font-bold text-slate-400 font-mono">{currentSheet.sana}</span>
+              </div>
             </div>
 
-            {selectedDorilarList.length === 0 ? (
-              <div className="py-10 text-center text-slate-400 text-xs flex flex-col items-center justify-center flex-1">
-                <FaPills className="text-slate-200 mb-2.5" size={28} />
-                <p className="font-semibold text-slate-600">Hozircha dori tanlanmadi</p>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-xs">Jadvaldagi katakka sonini yozing yoki [+] tugmasini bosing.</p>
+          </div>
+
+          {/* ── EXCEL BOTTOM SHEET TABS (Лист1, Лист2, Лист3...) ─────────────── */}
+          <div className="bg-slate-200 border border-slate-300 mt-3 px-3 py-1.5 flex items-center gap-1.5 rounded-2xl shadow-inner overflow-x-auto">
+            <span className="text-[11px] font-bold text-slate-600 px-2 flex items-center gap-1">
+              <MdTableChart size={15} /> Varaqlar (Kunlar):
+            </span>
+
+            {sheets.map(sheetName => {
+              const isActive = activeSheet === sheetName;
+              const count = Object.values(sheetData[sheetName]?.quantities || {}).filter(q => q > 0).length;
+              
+              return (
+                <button
+                  key={sheetName}
+                  onClick={() => setActiveSheet(sheetName)}
+                  className={`px-4 py-1.5 text-xs font-bold transition-all border rounded-xl flex items-center gap-2 ${
+                    isActive 
+                      ? 'bg-white text-emerald-800 border-slate-300 shadow-sm' 
+                      : 'bg-slate-300/80 text-slate-700 border-transparent hover:bg-slate-300'
+                  }`}
+                >
+                  <span>{sheetName}</span>
+                  {count > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-emerald-600 text-white text-[9px] font-mono">
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={addNewSheet}
+              className="px-3 py-1.5 flex items-center gap-1 bg-white hover:bg-emerald-50 text-emerald-800 rounded-xl text-xs font-bold border border-slate-300 shadow-sm transition-all ml-1"
+              title="Yangi kun/varaq ochish"
+            >
+              <MdAdd size={15} /> Yangi varaq
+            </button>
+          </div>
+        </>
+      ) : (
+        /* ── TARIX OYNASI: SOTILGAN VA ISHLATILGAN DORILAR TIZIMI ─────────── */
+        <div className="space-y-4">
+          
+          {/* TARIX TOP STATS */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <MdOutlineReceipt size={24} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Jami Cheklar</p>
+                <p className="text-2xl font-black text-slate-800">{filteredHistory.length} <span className="text-xs font-normal text-slate-400">ta</span></p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <FaPills size={22} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ishlatilgan Dorilar</p>
+                <p className="text-xl font-black text-blue-700 font-mono">{fmt(totalHistoryDrugsSum)} <span className="text-xs font-normal">so'm</span></p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <FaBed size={22} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Yotoq Tushumi</p>
+                <p className="text-xl font-black text-purple-700 font-mono">{fmt(totalHistoryBedSum)} <span className="text-xs font-normal">so'm</span></p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white p-4 rounded-2xl shadow-md flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">Jami Savdo Tushumi</p>
+                <p className="text-2xl font-black font-mono leading-tight">{fmt(totalHistoryRevenue)} <span className="text-xs font-normal">so'm</span></p>
+                {totalHistoryDebt > 0 && (
+                  <p className="text-[11px] text-amber-200 mt-0.5">Qarzlar: {fmt(totalHistoryDebt)} so'm</p>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* TARIX SUB-TABS & FILTERS BAR */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setHistorySubTab('receipts')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  historySubTab === 'receipts'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                🧾 Barcha Cheklar Ro'yxati ({filteredHistory.length})
+              </button>
+
+              <button
+                onClick={() => setHistorySubTab('usage')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  historySubTab === 'usage'
+                    ? 'bg-emerald-700 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                💊 Faqat Ishlatilgan/Sotilgan Dorilar Hisoboti ({aggregatedUsedDrugs.length})
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input 
+                  type="text"
+                  value={historySearch}
+                  onChange={e => setHistorySearch(e.target.value)}
+                  placeholder="Bemor yoki chek № bo'yicha qidiruv..."
+                  className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-600 outline-none w-56 font-medium"
+                />
+              </div>
+
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
+                <MdDateRange className="text-slate-400 mr-1" size={16} />
+                <input 
+                  type="date"
+                  value={historyDateFilter}
+                  onChange={e => setHistoryDateFilter(e.target.value)}
+                  className="bg-transparent text-xs text-slate-800 outline-none font-medium"
+                />
+                {historyDateFilter && (
+                  <button onClick={() => setHistoryDateFilter('')} className="text-xs text-slate-400 hover:text-red-500 ml-1">×</button>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* SUB-VIEW 1: CHEKLAR RO'YXATI */}
+          {historySubTab === 'receipts' ? (
+            filteredHistory.length === 0 ? (
+              <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm">
+                <MdReceiptLong className="text-slate-300 mx-auto mb-3" size={48} />
+                <h4 className="font-extrabold text-slate-700 text-sm">Hali hech qanday chek yoki sotuv saqlanmagan</h4>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  Kalkulyator oynasida bemorga dori yozib, <b>"Chekni Saqlash & Tarixga Yozish"</b> tugmasini bossangiz, cheklar shu yerda saqlanadi.
+                </p>
+                <button 
+                  onClick={() => setActiveMainView('calculator')}
+                  className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition-all"
+                >
+                  Kalkulyatorga o'tish
+                </button>
               </div>
             ) : (
-              <div className="overflow-y-auto space-y-2 pr-1 flex-1" style={{ maxHeight: '230px' }}>
-                {selectedDorilarList.map((item, i) => (
-                  <div key={item.id} className="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 transition-all">
-                    <div className="flex-1 min-w-0 pr-2">
-                      <p className="font-bold text-slate-800 truncate text-[11px]">{i + 1}. {item.nom}</p>
-                      <p className="text-[10px] text-slate-500 font-mono">{fmt(item.narx)} × {item.qty} dona (Qoldi: {item.remainingStock})</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredHistory.map((receipt) => (
+                  <div key={receipt.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col">
+                    
+                    {/* Header */}
+                    <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-mono font-black bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">
+                          {receipt.receiptNumber}
+                        </span>
+                        <h4 className="font-extrabold text-slate-800 text-sm mt-1">{receipt.bemor}</h4>
+                        <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                          <MdCalendarToday size={12} /> {receipt.sana} {receipt.time && `• ${receipt.time}`}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-xs font-black text-emerald-700 font-mono block">
+                          {fmt(receipt.grandTotal)} so'm
+                        </span>
+                        {receipt.qarz > 0 ? (
+                          <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                            Qarz: {fmt(receipt.qarz)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            To'langan
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="font-mono font-black text-emerald-800 text-xs whitespace-nowrap">
-                      {fmt(item.total)}
-                    </span>
+
+                    {/* Sostav dorilari */}
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div className="space-y-1.5 mb-3 max-h-40 overflow-y-auto">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Ishlatilgan Dorilar ({receipt.items?.length || 0} ta):
+                        </p>
+                        {receipt.items?.map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-xs py-1 border-b border-slate-100 text-slate-700">
+                            <span className="truncate flex-1 pr-2 text-[11px] font-medium">• {item.nom} × {item.qty} ta</span>
+                            <span className="font-mono font-bold text-[11px]">{fmt(item.total)}</span>
+                          </div>
+                        ))}
+                        {receipt.yotoqKun > 0 && (
+                          <div className="flex justify-between text-xs py-1 text-purple-700 font-bold border-b border-slate-100">
+                            <span className="text-[11px]">• Yotoq xona ({receipt.yotoqKun} kun)</span>
+                            <span className="font-mono text-[11px]">{fmt(receipt.yotoqJami)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <button
+                          onClick={() => {
+                            setReceiptForPrint(receipt);
+                            setIsReceiptModalOpen(true);
+                          }}
+                          className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 px-2.5 py-1.5 rounded-lg transition-all"
+                        >
+                          <MdPrint size={15} /> Chekni chiqarish
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm("Bu chekni tarixdan o'chirmoqchimisiz?")) {
+                              setHistoryReceipts(historyReceipts.filter(r => r.id !== receipt.id));
+                            }
+                          }}
+                          className="text-xs text-slate-400 hover:text-red-500 p-1.5 rounded-lg transition-all"
+                          title="Chekni o'chirish"
+                        >
+                          <FaTrashAlt size={12} />
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── EXCEL BOTTOM SHEET TABS (Лист1, Лист2, Лист3...) ─────────────── */}
-      <div className="bg-slate-200 border border-slate-300 mt-3 px-3 py-1.5 flex items-center gap-1.5 rounded-2xl shadow-inner overflow-x-auto">
-        <span className="text-[11px] font-bold text-slate-600 px-2 flex items-center gap-1">
-          <MdTableChart size={15} /> Varaqlar (Kunlar):
-        </span>
-
-        {sheets.map(sheetName => {
-          const isActive = activeSheet === sheetName;
-          const count = Object.values(sheetData[sheetName]?.quantities || {}).filter(q => q > 0).length;
-          
-          return (
-            <button
-              key={sheetName}
-              onClick={() => setActiveSheet(sheetName)}
-              className={`px-4 py-1.5 text-xs font-bold transition-all border rounded-xl flex items-center gap-2 ${
-                isActive 
-                  ? 'bg-white text-emerald-800 border-slate-300 shadow-sm' 
-                  : 'bg-slate-300/80 text-slate-700 border-transparent hover:bg-slate-300'
-              }`}
-            >
-              <span>{sheetName}</span>
-              {count > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-600 text-white text-[9px] font-mono">
-                  {count}
+            )
+          ) : (
+            /* SUB-VIEW 2: FAQAT ISHLATILGAN / SOTILGAN DORILAR HISOBLANGAN JADVALI */
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <FaPills className="text-emerald-600" /> Barcha Sarflangan & Sotilgan Dorilar Ro'yxati
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Umumiy nechta dori sarflangani va jami summalari</p>
+                </div>
+                <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
+                  {aggregatedUsedDrugs.length} turdagi dori ishlatilgan
                 </span>
-              )}
-            </button>
-          );
-        })}
+              </div>
 
-        <button
-          onClick={addNewSheet}
-          className="px-3 py-1.5 flex items-center gap-1 bg-white hover:bg-emerald-50 text-emerald-800 rounded-xl text-xs font-bold border border-slate-300 shadow-sm transition-all ml-1"
-          title="Yangi kun/varaq ochish"
-        >
-          <MdAdd size={15} /> Yangi varaq
-        </button>
-      </div>
+              {aggregatedUsedDrugs.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 text-xs">
+                  <FaPills className="text-slate-300 mx-auto mb-2" size={36} />
+                  Hozircha hech qanday dori sarflanmagan yoki sotilmagan.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 w-12 text-center">№</th>
+                        <th className="px-4 py-3">Dori nomi</th>
+                        <th className="px-4 py-3">Kategoriya</th>
+                        <th className="px-4 py-3 text-right">Dona narxi</th>
+                        <th className="px-4 py-3 text-center bg-emerald-50 text-emerald-950 font-black">Jami Sarflangan Soni</th>
+                        <th className="px-4 py-3 text-right font-black">Umumiy Summasi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-mono">
+                      {aggregatedUsedDrugs.map((drug, index) => (
+                        <tr key={drug.id} className="hover:bg-slate-50 transition-colors font-medium">
+                          <td className="px-4 py-2.5 text-center text-slate-400 font-sans">{index + 1}</td>
+                          <td className="px-4 py-2.5 font-bold text-slate-800 font-sans">{drug.nom}</td>
+                          <td className="px-4 py-2.5 text-slate-500 font-sans">
+                            <span className="bg-slate-100 px-2 py-0.5 rounded text-[11px]">{drug.category || 'Boshqa'}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-slate-600">{fmt(drug.narx)} so'm</td>
+                          <td className="px-4 py-2.5 text-center bg-emerald-50/50">
+                            <span className="font-black text-emerald-700 bg-emerald-100/70 px-2.5 py-1 rounded-full text-xs">
+                              {drug.totalQty} dona
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-black text-slate-900 text-sm">
+                            {fmt(drug.totalSum)} so'm
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-slate-900 text-white font-bold font-mono">
+                      <tr>
+                        <td colSpan="4" className="px-4 py-3 text-right font-sans text-xs uppercase text-slate-300">Jami Sarflangan Dorilar Qiymati:</td>
+                        <td className="px-4 py-3 text-center text-amber-300 font-black text-sm">
+                          {aggregatedUsedDrugs.reduce((s, d) => s + d.totalQty, 0)} dona
+                        </td>
+                        <td className="px-4 py-3 text-right text-emerald-300 font-black text-base">
+                          {fmt(aggregatedUsedDrugs.reduce((s, d) => s + d.totalSum, 0))} so'm
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+      )}
 
       {/* ── MODAL: DORINI TAHRIRLASH (EDIT MEDICINE) ────────────────────── */}
       {editingDrug && (
@@ -1125,13 +1602,13 @@ export default function AdminPharmacy() {
       )}
 
       {/* ── MODAL: CHEK CHIQARISH / CHOP ETISH ──────────────────────────── */}
-      {isReceiptModalOpen && (
+      {isReceiptModalOpen && receiptForPrint && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200">
             
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                <MdReceiptLong className="text-emerald-600" size={20} /> Bemor Hisob Cheki
+                <MdReceiptLong className="text-emerald-600" size={20} /> Bemor Hisob Cheki ({receiptForPrint.receiptNumber})
               </h3>
               <button 
                 onClick={() => setIsReceiptModalOpen(false)}
@@ -1145,21 +1622,23 @@ export default function AdminPharmacy() {
               <div className="text-center pb-3 border-b border-dashed border-slate-300 font-sans">
                 <h4 className="font-extrabold text-sm text-slate-900">AS-SALAAM CLINIC</h4>
                 <p className="text-[11px] text-slate-500">Andijon sh., Shifoxona hisob-fakturasi</p>
-                <p className="text-[10px] text-slate-400 mt-1">Sana: {currentSheet.sana} | Bemor: <b>{currentSheet.bemor || 'Noma\'lum'}</b></p>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Chek: <b>{receiptForPrint.receiptNumber}</b> | Sana: {receiptForPrint.sana} | Bemor: <b>{receiptForPrint.bemor || 'Noma\'lum'}</b>
+                </p>
               </div>
 
               {/* Items */}
               <div className="space-y-1.5 max-h-60 overflow-y-auto">
-                {selectedDorilarList.map((item, i) => (
-                  <div key={item.id} className="flex justify-between py-1 border-b border-slate-100">
+                {receiptForPrint.items?.map((item, i) => (
+                  <div key={item.id || i} className="flex justify-between py-1 border-b border-slate-100">
                     <span className="flex-1 pr-2 truncate">{i + 1}. {item.nom} ({item.qty} dona)</span>
                     <span className="font-bold">{fmt(item.total)}</span>
                   </div>
                 ))}
-                {currentSheet.yotoqKun > 0 && (
+                {receiptForPrint.yotoqKun > 0 && (
                   <div className="flex justify-between py-1 border-b border-slate-100 text-purple-700 font-bold">
-                    <span>Yotoq ({currentSheet.yotoqKun} kun)</span>
-                    <span>{fmt(yotoqJami)}</span>
+                    <span>Yotoq ({receiptForPrint.yotoqKun} kun)</span>
+                    <span>{fmt(receiptForPrint.yotoqJami)}</span>
                   </div>
                 )}
               </div>
@@ -1168,21 +1647,21 @@ export default function AdminPharmacy() {
               <div className="pt-2 border-t-2 border-slate-900 space-y-1 font-bold text-sm">
                 <div className="flex justify-between">
                   <span>JAMI:</span>
-                  <span className="text-emerald-700">{fmt(grandTotal)} so'm</span>
+                  <span className="text-emerald-700">{fmt(receiptForPrint.grandTotal)} so'm</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-600">
                   <span>To'landi:</span>
-                  <span>{fmt(currentSheet.tuladi || 0)} so'm</span>
+                  <span>{fmt(receiptForPrint.tuladi || 0)} so'm</span>
                 </div>
-                {qaytim > 0 ? (
+                {receiptForPrint.qaytim > 0 ? (
                   <div className="flex justify-between text-xs text-emerald-700 font-black">
                     <span>Qaytim (Сдача):</span>
-                    <span>+{fmt(qaytim)} so'm</span>
+                    <span>+{fmt(receiptForPrint.qaytim)} so'm</span>
                   </div>
                 ) : (
                   <div className="flex justify-between text-xs text-red-600 font-black">
                     <span>Qoldiq (Qarz):</span>
-                    <span>{fmt(qarz)} so'm</span>
+                    <span>{fmt(receiptForPrint.qarz)} so'm</span>
                   </div>
                 )}
               </div>
