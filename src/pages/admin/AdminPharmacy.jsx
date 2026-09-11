@@ -5,7 +5,7 @@ import {
   MdViewList, MdTableChart, MdHelpOutline, MdAddCircle, MdClose,
   MdInventory, MdAttachMoney, MdLocalHospital, MdFilterList,
   MdTrendingUp, MdReceiptLong, MdCheck, MdEdit, MdHistory,
-  MdOutlineReceipt, MdFilterAlt, MdDateRange, MdExpandMore, MdExpandLess
+  MdOutlineReceipt, MdFilterAlt, MdDateRange, MdConfirmationNumber
 } from 'react-icons/md';
 import { FaFileExcel, FaBed, FaPills, FaCalculator, FaPlusCircle, FaBoxes, FaEdit, FaTrashAlt, FaHistory, FaCheckDouble } from 'react-icons/fa';
 
@@ -141,7 +141,7 @@ const DEFAULT_DORILAR = [
   { id: 128, nom: 'Фуросемид амп 2мл №10',                    narx: 1820,   stock: 140, category: 'Diuretik' },
   { id: 129, nom: 'Церуглан',                                  narx: 672,    stock: 160, category: 'Ampula' },
   { id: 130, nom: 'Цефазолин пор. д/пр. р-ра д/ин. 1г №50',   narx: 8904,   stock: 120, category: 'Antibiotik' },
-  { id: 131, nom: 'Цефаперазол сульбакtam (Никазон-с)',        narx: 22960,  stock: 65,  category: 'Antibiotik' },
+  { id: 131, nom: 'Цефаперазол сульбактам (Никазон-с)',        narx: 22960,  stock: 65,  category: 'Antibiotik' },
   { id: 132, nom: 'Цефтриаксон пор. 1г №50',                  narx: 6650,   stock: 130, category: 'Antibiotik' },
   { id: 133, nom: 'Цитиколин Ромфарм р-р. д/ин 1000мг/4мл №5', narx: 47600,  stock: 45,  category: 'Nootrop' },
   { id: 134, nom: 'Цитофлавин',                               narx: 37100,  stock: 55,  category: 'Flakon', highlight: 'red' },
@@ -159,6 +159,20 @@ const DEFAULT_DORILAR = [
 const YOTOQ_NARXI = 220000;
 const fmt = (n) => (Math.round(n || 0)).toLocaleString('uz-UZ');
 const todayStr = () => new Date().toISOString().split('T')[0];
+
+// Ketma-ket unikal chek raqami hisoblagichi (1001, 1002, 1003...)
+const getNextReceiptNumber = (history) => {
+  if (!history || history.length === 0) return '1001';
+  const numbers = history
+    .map(h => {
+      const match = (h.receiptNumber || '').match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    })
+    .filter(n => !isNaN(n) && n > 0);
+  
+  const maxNum = numbers.length > 0 ? Math.max(...numbers) : 1000;
+  return String(maxNum + 1);
+};
 
 export default function AdminPharmacy() {
   const [activeMainView, setActiveMainView] = useState('calculator');
@@ -186,11 +200,12 @@ export default function AdminPharmacy() {
   const [activeSheet, setActiveSheet] = useState('Лист1');
   const [sheets, setSheets] = useState(['Лист1', 'Лист2', 'Лист3']);
   
-  const [sheetData, setSheetData] = useState({
-    'Лист1': { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 },
-    'Лист2': { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 },
-    'Лист3': { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 }
-  });
+  // Har bir sheet ma'lumotlari (Chek raqami bilan birga)
+  const [sheetData, setSheetData] = useState(() => ({
+    'Лист1': { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0, chekRaqam: '1001' },
+    'Лист2': { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0, chekRaqam: '1002' },
+    'Лист3': { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0, chekRaqam: '1003' }
+  }));
 
   const [search, setSearch] = useState('');
   const [historySearch, setHistorySearch] = useState('');
@@ -226,7 +241,9 @@ export default function AdminPharmacy() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const currentSheet = sheetData[activeSheet] || { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 };
+  const currentSheet = sheetData[activeSheet] || { 
+    quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0, chekRaqam: getNextReceiptNumber(historyReceipts) 
+  };
   const currentQuantities = currentSheet.quantities;
 
   const handleQuantityChange = (id, val) => {
@@ -319,7 +336,14 @@ export default function AdminPharmacy() {
     setSheets(prev => [...prev, newName]);
     setSheetData(prev => ({
       ...prev,
-      [newName]: { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 }
+      [newName]: { 
+        quantities: {}, 
+        bemor: '', 
+        sana: todayStr(), 
+        yotoqKun: 0, 
+        tuladi: 0, 
+        chekRaqam: getNextReceiptNumber(historyReceipts) 
+      }
     }));
     setActiveSheet(newName);
   };
@@ -372,17 +396,23 @@ export default function AdminPharmacy() {
       }));
   }, [dorilar, currentQuantities]);
 
-  // ASOSIY SAQLASH VA CHEK CHIQARISH FUNKSIYASI (Har safar Tarixga to'liq yozadi)
+  // ASOSIY SAQLASH VA CHEK CHIQARISH (Unikal va tartibli chek raqami bilan)
   const saveAndPrintReceipt = (shouldPrintDirectly = false) => {
     if (selectedDorilarList.length === 0 && (currentSheet.yotoqKun || 0) === 0) {
       alert("Iltimos, avval dori yoki yotoq belgilang!");
       return;
     }
 
-    const receiptNumber = 'CHK-' + Math.floor(100000 + Math.random() * 900000);
+    // Berilgan chek raqami yoki avtomatik keyingi raqam
+    let receiptNum = (currentSheet.chekRaqam || '').trim();
+    if (!receiptNum) {
+      receiptNum = getNextReceiptNumber(historyReceipts);
+    }
+    const finalReceiptNumber = receiptNum.startsWith('№') ? receiptNum : `№ ${receiptNum}`;
+
     const newReceipt = {
-      id: Date.now(),
-      receiptNumber,
+      id: Date.now() + Math.random(),
+      receiptNumber: finalReceiptNumber,
       sheet: activeSheet,
       sana: currentSheet.sana || todayStr(),
       time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
@@ -414,15 +444,23 @@ export default function AdminPharmacy() {
     setHistoryReceipts(updatedHistory);
     localStorage.setItem('assalam_pharmacy_history', JSON.stringify(updatedHistory));
 
-    // Formani tozalash
+    // Keyingi chek raqamini belgilash va hozirgi varaqni tozalash
+    const nextReceiptNum = getNextReceiptNumber(updatedHistory);
     setSheetData(prev => ({
       ...prev,
-      [activeSheet]: { quantities: {}, bemor: '', sana: todayStr(), yotoqKun: 0, tuladi: 0 }
+      [activeSheet]: { 
+        quantities: {}, 
+        bemor: '', 
+        sana: todayStr(), 
+        yotoqKun: 0, 
+        tuladi: 0, 
+        chekRaqam: nextReceiptNum 
+      }
     }));
 
     setReceiptForPrint(newReceipt);
     setIsReceiptModalOpen(true);
-    showToast(`Chek #${receiptNumber} muvaffaqiyatli saqlandi va Tarixga yozildi! 🎉`);
+    showToast(`Chek ${finalReceiptNumber} muvaffaqiyatli saqlandi va Tarixga yozildi! 🎉`);
 
     if (shouldPrintDirectly) {
       setTimeout(() => window.print(), 300);
@@ -654,11 +692,11 @@ export default function AdminPharmacy() {
             </div>
           </div>
 
-          {/* ── FILTER & PATIENT CONTROLS ───────────────────────────────────── */}
+          {/* ── FILTER & PATIENT CONTROLS (CHEK RAQAMI BILAN) ────────────────── */}
           <div className="bg-white border-x border-b border-slate-200 p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-sm">
             
             {/* Search input */}
-            <div className="flex items-center gap-2 flex-1 min-w-[260px] max-w-md">
+            <div className="flex items-center gap-2 flex-1 min-w-[240px] max-w-sm">
               <div className="relative w-full">
                 <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
@@ -673,7 +711,7 @@ export default function AdminPharmacy() {
 
             {/* Category badges */}
             <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-              {categories.slice(0, 7).map(cat => (
+              {categories.slice(0, 6).map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -699,8 +737,23 @@ export default function AdminPharmacy() {
               </button>
             </div>
 
-            {/* Patient and Date */}
+            {/* Patient, Receipt Number and Date */}
             <div className="flex items-center gap-2">
+              
+              {/* Chek Raqami */}
+              <div className="flex items-center bg-amber-50 border border-amber-300 rounded-xl px-2.5 py-1.5 focus-within:bg-white focus-within:border-amber-600 transition-all shadow-inner">
+                <span className="text-[11px] font-black text-amber-900 mr-1">№</span>
+                <input 
+                  type="text"
+                  value={currentSheet.chekRaqam || ''}
+                  onChange={e => updateSheetField('chekRaqam', e.target.value)}
+                  placeholder="1001"
+                  className="bg-transparent text-xs text-amber-950 outline-none w-16 font-mono font-black"
+                  title="Chek raqami (o'zgartirish mumkin)"
+                />
+              </div>
+
+              {/* Bemor F.I.SH. */}
               <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:bg-white focus-within:border-emerald-600 transition-all">
                 <MdPerson className="text-slate-400 mr-1.5" size={16} />
                 <input 
@@ -708,10 +761,11 @@ export default function AdminPharmacy() {
                   value={currentSheet.bemor}
                   onChange={e => updateSheetField('bemor', e.target.value)}
                   placeholder="Bemor F.I.SH."
-                  className="bg-transparent text-xs text-slate-800 outline-none w-32 font-semibold"
+                  className="bg-transparent text-xs text-slate-800 outline-none w-28 font-semibold"
                 />
               </div>
 
+              {/* Sana */}
               <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:bg-white focus-within:border-emerald-600 transition-all">
                 <MdCalendarToday className="text-slate-400 mr-1.5" size={15} />
                 <input 
@@ -870,13 +924,15 @@ export default function AdminPharmacy() {
             {/* RIGHT CALCULATION & SUMMARY PANEL (4 COLS) */}
             <div className="xl:col-span-4 flex flex-col gap-3.5">
               
-              {/* ASL EXCEL KVADRAT HISOB-KITOB JADVALI (ANIQ VA TO'G'RI HISOB-KITOB) */}
+              {/* ASL EXCEL KVADRAT HISOB-KITOB JADVALI */}
               <div className="bg-white border-2 border-slate-900 rounded-2xl shadow-md overflow-hidden">
                 <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
                     <FaCalculator className="text-amber-400" /> Bemor Hisob-Kalkulyatori
                   </span>
-                  <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono font-bold">{activeSheet}</span>
+                  <span className="text-[10px] bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-mono font-black">
+                    Chek: {currentSheet.chekRaqam || '1001'}
+                  </span>
                 </div>
 
                 <table className="w-full text-xs border-collapse font-sans font-bold">
@@ -1189,7 +1245,7 @@ export default function AdminPharmacy() {
                     {/* Header */}
                     <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] font-mono font-black bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md">
                           {receipt.receiptNumber}
                         </span>
                         <h4 className="font-extrabold text-slate-800 text-sm mt-1">{receipt.bemor}</h4>
@@ -1600,7 +1656,7 @@ export default function AdminPharmacy() {
                 <h4 className="font-extrabold text-sm text-slate-900">AS-SALAAM CLINIC</h4>
                 <p className="text-[11px] text-slate-500">Andijon sh., Shifoxona hisob-fakturasi</p>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Chek: <b>{receiptForPrint.receiptNumber}</b> | Sana: {receiptForPrint.sana} | Bemor: <b>{receiptForPrint.bemor || 'Noma\'lum'}</b>
+                  Chek: <b className="text-amber-900 font-bold">{receiptForPrint.receiptNumber}</b> | Sana: {receiptForPrint.sana} | Bemor: <b>{receiptForPrint.bemor || 'Noma\'lum'}</b>
                 </p>
               </div>
 
