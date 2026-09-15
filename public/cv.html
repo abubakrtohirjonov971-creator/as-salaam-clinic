@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abubakr Tohirjonov — Frontend Developer CV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0f172a;
+      color: #334155;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    @media print {
+      body {
+        background-color: #ffffff;
+        color: #0f172a;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .cv-container {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+      }
+      @page {
+        margin: 10mm;
+        size: A4;
+      }
+    }
+  </style>
+</head>
+<body class="py-8 px-4 sm:px-6 lg:px-8 min-h-screen flex flex-col items-center justify-center">
+
+  <!-- Print & Action Bar (Hidden on print) -->
+  <div class="no-print max-w-4xl w-full mb-6 flex flex-wrap items-center justify-between gap-4 bg-slate-800/80 backdrop-blur-md p-4 rounded-2xl border border-slate-700 shadow-xl">
+    <div class="flex items-center gap-3">
+      <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
+      <span class="text-sm font-semibold text-slate-200">Abubakr Tohirjonov — Professional Resume (CV)</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="window.print()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2 active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        PDF Yuklab Olish / Chop Etish
+      </button>
+    </div>
+  </div>
+
+  <!-- Main CV Container (A4 Printable Canvas) -->
+  <div class="cv-container max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 grid grid-cols-1 md:grid-cols-12">
+    
+    <!-- LEFT SIDEBAR (DARK THEMED) - 4.5 COLS -->
+    <div class="md:col-span-4 bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between border-r border-slate-800">
+      
+      <div>
+        <!-- Profile / Avatar Initials -->
+        <div class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-blue-600/30 mb-6 border-2 border-white/10">
+          AT
+        </div>
+
+        <h1 class="text-2xl font-black tracking-tight text-white mb-1">
+          Abubakr<br/><span class="text-blue-400">Tohirjonov</span>
+        </h1>
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 font-mono">
+          Frontend Developer
+        </p>
+
+        <!-- CONTACT DETAILS -->
+        <div class="space-y-3.5 text-xs border-t border-slate-800 pt-6">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Aloqa & Profillar</p>
+          
+          <a href="tel:+998905404035" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+            </div>
+            <span class="font-mono font-medium">+998 (90) 540-40-35</span>
+          </a>
+
+          <a href="mailto:abubakrtohirjonov971@gmail.com" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            </div>
+            <span class="truncate font-mono text-[11px]">abubakrtohirjonov971@gmail.com</span>
+          </a>
+
+          <a href="https://t.me/bytoxirov" target="_blank" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            </div>
+            <span class="font-mono font-medium">@bytoxirov</span>
+          </a>
+
+          <a href="https://github.com/abubakrtohirjonov971-creator" target="_blank" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            </div>
+            <span class="truncate font-mono text-[11px]">github.com/abubakrtohirjonov971</span>
+          </a>
+
+          <div class="flex items-center gap-3 text-slate-300">
+            <div class="w-8 h-8 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </div>
+            <span class="font-medium">O'zbekiston, Andijon / Toshkent</span>
+          </div>
+        </div>
+
+        <!-- TECH SKILLS -->
+        <div class="border-t border-slate-800 pt-6 mt-6">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-3">Texnologiyalar</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">React.js</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">JavaScript (ES6+)</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Tailwind CSS</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Redux Toolkit</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">HTML5 / CSS3</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Vite & Webpack</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Supabase (PostgreSQL)</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">RESTful API</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Telegram Bot API</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Git & GitHub</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Responsive Design</span>
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[11px] font-bold font-mono">Vercel Deployment</span>
+          </div>
+        </div>
+
+        <!-- LANGUAGES -->
+        <div class="border-t border-slate-800 pt-6 mt-6">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-2">Tillar</p>
+          <ul class="text-xs space-y-1.5 text-slate-300">
+            <li class="flex justify-between font-medium"><span>O'zbek tili</span> <span class="text-blue-400 font-mono">Ona tili</span></li>
+            <li class="flex justify-between font-medium"><span>Rus tili</span> <span class="text-slate-400 font-mono">Professional</span></li>
+            <li class="flex justify-between font-medium"><span>Ingliz tili</span> <span class="text-slate-400 font-mono">Texnik (Docs)</span></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="text-[10px] text-slate-500 font-mono pt-6">
+        Oxirgi yangilanish: 2026
+      </div>
+
+    </div>
+
+    <!-- RIGHT MAIN CONTENT - 7.5 COLS -->
+    <div class="md:col-span-8 p-6 sm:p-8 flex flex-col justify-between bg-white text-slate-700">
+      
+      <div class="space-y-6">
+        
+        <!-- ABOUT ME / SUMMARY -->
+        <section>
+          <div class="flex items-center gap-2 mb-2.5">
+            <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+            <h2 class="text-xs font-black uppercase tracking-wider text-slate-900 font-mono">Mutaxassislik Haqida</h2>
+          </div>
+          <p class="text-xs sm:text-[13px] leading-relaxed text-slate-600 font-normal">
+            Zamonaviy, yuqori tezlikda ishlovchi va foydalanuvchilar uchun qulay bo'lgan veb-ilovalarni yaratuvchi <b>Frontend Dasturchi</b>. 
+            React.js, Tailwind CSS va zamonaviy JavaScript ekotizimida boy amaliy tajribaga ega. Foydalanuvchi interfeyslarini (UI/UX) yuqori sifatda yaratish, murakkab biznes jarayonlarini (CRM, avtomatlashtirilgan kalkulyatorlar, Telegram bot integratsiyalari) ishlab chiqish va optimallashtirishga ixtisoslashgan.
+          </p>
+        </section>
+
+        <!-- FEATURED EXPERIENCE & PROJECTS -->
+        <section>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+            <h2 class="text-xs font-black uppercase tracking-wider text-slate-900 font-mono">Katta Loyihalar va Ish Tajribasi</h2>
+          </div>
+
+          <div class="space-y-4">
+            
+            <!-- PROJECT 1: As-salaam Clinic Platform -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+                <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <span>As-salaam Clinic — Tibbiy Platforma & Admin Panel</span>
+                  <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold font-mono">Production</span>
+                </h3>
+                <span class="text-[11px] font-bold text-slate-500 font-mono">Lead Frontend Developer</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-2.5 leading-relaxed">
+                Zamonaviy tibbiyot markazi uchun to'liq avtomatlashtirilgan veb-platforma va keng ko'lamli boshqaruv (CRM) tizimi.
+              </p>
+              
+              <ul class="text-[12px] space-y-1.5 text-slate-600 list-disc list-inside mb-3">
+                <li><b>Smart Excel Kalkulyator:</b> 145+ dori va statsionar yotoq xizmatlari uchun Excel uslubidagi real-vaqt kassa kalkulyatori yaratildi.</li>
+                <li><b>Telegram Multi-Admin Integratsiya:</b> Bron qilish tizimi va kassa hisobotlarini bir nechta klinika ma'murlariga real-vaqtda bot orqali yetkazish mexanizmi yo'lga qo'yildi.</li>
+                <li><b>Ombor va Tarix Tizimi:</b> Dorilar qoldig'ini real-vaqtda nazorat qilish, kassa cheklarini generatsiya qilish va chop etish (Thermal / A4) imkoniyati ishlab chiqildi.</li>
+                <li><b>Database & Auth:</b> Supabase (PostgreSQL) va xavfsiz autentifikatsiya tizimi ulandi.</li>
+              </ul>
+
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                <span class="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold">React.js</span>
+                <span class="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold">Tailwind CSS</span>
+                <span class="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold">Redux Toolkit</span>
+                <span class="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold">Supabase</span>
+                <span class="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold">Telegram API</span>
+                <span class="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded text-[10px] font-mono font-semibold">Vite</span>
+              </div>
+            </div>
+
+            <!-- PROJECT 2: CRM & Web Applications -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+                <h3 class="text-sm font-extrabold text-slate-900">
+                  E-Commerce & Boshqaruv Dashboardlari
+                </h3>
+                <span class="text-[11px] font-bold text-slate-500 font-mono">Frontend Developer</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-2 leading-relaxed">
+                Foydalanuvchilarga qulay interfeyslar, dinamik jadvallar, analitika grafiklari va to'lov tizimlari integratsiyasiga ega veb-saytlar.
+              </p>
+              <ul class="text-[12px] space-y-1 text-slate-600 list-disc list-inside">
+                <li>Barcha qurilmalarga (Mobile, Tablet, Desktop) 100% moslashuvchan Responsive dizayn.</li>
+                <li>Vite va Clean Code arxitekturasi orqali sahifa yuklanish tezligini (Lighthouse 95+) oshirish.</li>
+              </ul>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- KEY STRENGTHS & WORK APPROACH -->
+        <section>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+            <h2 class="text-xs font-black uppercase tracking-wider text-slate-900 font-mono">Kuchli Tomonlar va Ish Usuli</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-600">
+            <div class="flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-blue-600 font-bold">✓</span>
+              <span><b>Tezkor va sifatli kod:</b> Qayta ishlatiluvchi (Clean Code) komponentlar yaratish.</span>
+            </div>
+            <div class="flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-blue-600 font-bold">✓</span>
+              <span><b>UI/UX sezgirligi:</b> Chiroyli va foydalanuvchiga qulay dizaynlarni kodga aylantirish.</span>
+            </div>
+            <div class="flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-blue-600 font-bold">✓</span>
+              <span><b>API & Backend bilan ishlash:</b> RESTful API lar bilan oson va xatosiz integratsiya.</span>
+            </div>
+            <div class="flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <span class="text-blue-600 font-bold">✓</span>
+              <span><b>Mas'uliyat va rivojlanish:</b> Yangi texnologiyalarni tez o'rganish va jamoada ishlash.</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- FOOTER NOTE -->
+      <div class="pt-6 border-t border-slate-200 mt-6 flex items-center justify-between text-xs text-slate-400">
+        <span>Portfolio va loyihalar: <a href="https://github.com/abubakrtohirjonov971-creator" class="text-blue-600 font-bold hover:underline">GitHub Profile</a></span>
+        <span class="font-mono font-bold text-slate-500">Abubakr Tohirjonov</span>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
